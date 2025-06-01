@@ -141,12 +141,12 @@ isMaximal: {
 
     filetree = {
       neo-tree = {
-        enable = true;
+        enable = false;
       };
     };
 
     tabline = {
-      nvimBufferline.enable = true;
+      nvimBufferline.enable = false;
     };
 
     treesitter.context.enable = true;
@@ -188,6 +188,7 @@ isMaximal: {
       vim-wakatime.enable = false;
       diffview-nvim.enable = true;
       yanky-nvim.enable = false;
+      oil-nvim.enable = true;
       icon-picker.enable = isMaximal;
       surround.enable = isMaximal;
       leetcode-nvim.enable = isMaximal;

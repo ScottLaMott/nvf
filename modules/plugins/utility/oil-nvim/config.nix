@@ -14,6 +14,7 @@ in {
       startPlugins = ["oil-nvim"];
       pluginRC.oil-nvim = entryAnywhere ''
         require("oil").setup(${toLuaObject cfg.setupOpts});
+        vim.keymap.set ("n", "-", "<cmd>Oil<cr>", { desc = "Open parent directory"});
       '';
     };
   };

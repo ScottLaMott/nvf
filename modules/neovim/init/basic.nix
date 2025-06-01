@@ -93,6 +93,9 @@ in {
         swapfile = !cfg.preventJunkFiles;
         backup = !cfg.preventJunkFiles;
         writebackup = !cfg.preventJunkFiles;
+
+        # slm
+        scrolloff = 999;
       }
 
       (optionalAttrs cfg.undoFile.enable {
