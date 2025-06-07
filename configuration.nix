@@ -42,7 +42,7 @@ isMaximal: {
     # This section does not include a comprehensive list of available language modules.
     # To list all available language module options, please visit the nvf manual.
     languages = {
-      enableFormat = true; #
+      enableFormat = true;
       enableTreesitter = true;
       enableExtraDiagnostics = true;
 
@@ -268,6 +268,7 @@ isMaximal: {
     presence = {
       neocord.enable = false;
     };
+
     keymaps = [
       # save, quit + delete
       { key = "<leader>bd"; mode = ["n"]; action = "<cmd>bdelete<cr>"; silent = false; desc = "bdelete"; }
