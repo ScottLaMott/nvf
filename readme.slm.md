@@ -24,7 +24,7 @@
 - <leader>c command history 
 - <leader><space> open buffer list
   - keymaps in ./configuration.nix
-- git - repository auf github 
+- git - repository auf github  ScottLaMott
 
 ### Web Links
 
