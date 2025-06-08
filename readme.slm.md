@@ -14,7 +14,6 @@
 
 ### Todos
 
-- git - repository auf github
 - harpoon
 - markdown-preview
 
@@ -25,6 +24,7 @@
 - <leader>c command history 
 - <leader><space> open buffer list
   - keymaps in ./configuration.nix
+- git - repository auf github 
 
 ### Web Links
 
