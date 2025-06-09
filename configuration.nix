@@ -32,12 +32,7 @@ isMaximal: {
       nvim-docs-view.enable = isMaximal;
     };
 
-    debugger = {
-      nvim-dap = {
-        enable = true;
-        ui.enable = true;
-      };
-    };
+    debugger = { nvim-dap = { enable = true; ui.enable = true; }; };
 
     # This section does not include a comprehensive list of available language modules.
     # To list all available language module options, please visit the nvf manual.
@@ -49,25 +44,6 @@ isMaximal: {
       # Languages that will be supported in default and maximal configurations.
       nix.enable = true;
       markdown.enable = true;
-
-      # Languages that are enabled in the maximal configuration.
-      bash.enable = isMaximal;
-      clang.enable = isMaximal;
-      css.enable = isMaximal;
-      html.enable = isMaximal;
-      sql.enable = isMaximal;
-      java.enable = isMaximal;
-      kotlin.enable = isMaximal;
-      ts.enable = isMaximal;
-      go.enable = isMaximal;
-      lua.enable = isMaximal;
-      zig.enable = isMaximal;
-      python.enable = isMaximal;
-      typst.enable = isMaximal;
-      rust = {
-        enable = isMaximal;
-        crates.enable = isMaximal;
-      };
 
       # Language modules that are not as common.
       assembly.enable = false;
