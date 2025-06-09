@@ -10,15 +10,14 @@ isMaximal: {
       logFile = "/tmp/nvim.log";
     };
 
-    spellcheck = { enable = false; };
+    spellcheck = {enable = false;};
 
     lsp = {
       # This must be enabled for the language modules to hook into
       # the LSP API.
       enable = true;
 
-      formatOnSave = true;
-      # formatOnSave = false;
+      formatOnSave = false;
       lspkind.enable = false;
       lightbulb.enable = true;
       lspsaga.enable = false;
@@ -28,7 +27,12 @@ isMaximal: {
       nvim-docs-view.enable = isMaximal;
     };
 
-    debugger = { nvim-dap = { enable = true; ui.enable = true; }; };
+    debugger = {
+      nvim-dap = {
+        enable = true;
+        ui.enable = true;
+      };
+    };
 
     # This section does not include a comprehensive list of available language modules.
     # To list all available language module options, please visit the nvf manual.
@@ -63,13 +67,19 @@ isMaximal: {
       cellular-automaton.enable = false;
     };
 
-    statusline = { lualine = { enable = true; theme = "auto"; }; };
+    statusline = {
+      lualine = {
+        enable = true;
+        theme = "auto";
+      };
+    };
 
     theme = {
       enable = true;
       transparent = true;
       # name = "catppuccin"; style = "mocha";
-      name = "gruvbox"; style = "dark";
+      name = "gruvbox";
+      style = "dark";
       # name = "nord";
     };
 
@@ -196,27 +206,87 @@ isMaximal: {
       avante-nvim.enable = isMaximal;
     };
 
-    session = { nvim-session-manager.enable = false; };
+    session = {nvim-session-manager.enable = false;};
 
-    gestures = { gesture-nvim.enable = false; };
+    gestures = {gesture-nvim.enable = false;};
 
-    comments = { comment-nvim.enable = true; };
+    comments = {comment-nvim.enable = true;};
 
-    presence = { neocord.enable = false; };
+    presence = {neocord.enable = false;};
 
     keymaps = [
       # save, quit + delete
-      { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
-      { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
-      { key = "<leader>c";       mode = ["n"]; action = "<cmd>close<cr>";                     silent = false; desc = "close window"; }
-      { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                   silent = false; desc = "quitall"; }
-      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>"; silent = false; desc = "quitall"; }
+      {
+        key = "<leader>bd";
+        mode = ["n"];
+        action = "<cmd>bdelete<cr>";
+        silent = false;
+        desc = "bdelete";
+      }
+      {
+        key = "<leader>q";
+        mode = ["n"];
+        action = "<cmd>quit<cr>";
+        silent = false;
+        desc = "quit";
+      }
+      {
+        key = "<leader>c";
+        mode = ["n"];
+        action = "<cmd>close<cr>";
+        silent = false;
+        desc = "close window";
+      }
+      {
+        key = "<leader>o";
+        mode = ["n"];
+        action = "<cmd>only<cr>";
+        silent = false;
+        desc = "quitall";
+      }
+      {
+        key = "<leader>qa";
+        mode = ["n"];
+        action = "<cmd>quitall<cr>";
+        silent = false;
+        desc = "quitall";
+      }
       # Telescope
-      { key = "<leader>cc";      mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
-      { key = "<leader>f";       mode = ["n"]; action = "<cmd>Telescope find_files<cr>";      silent = false; desc = "telescope find files"; }
-      { key = "<leader>h";       mode = ["n"]; action = "<cmd>Telescope help_tags<cr>";       silent = false; desc = "telescope help tags"; }
-      { key = "<leader><space>"; mode = ["n"]; action = "<cmd>Telescope buffers<cr>";         silent = false; desc = "telescope buffers"; }
-      { key = "<leader>m";       mode = ["n"]; action = "<cmd>MarkdownPreview<cr>";           silent = false; desc = "MarkdownPreview"; }
+      {
+        key = "<leader>cc";
+        mode = ["n"];
+        action = "<cmd>Telescope command_history<cr>";
+        silent = false;
+        desc = "telescope command history";
+      }
+      {
+        key = "<leader>f";
+        mode = ["n"];
+        action = "<cmd>Telescope find_files<cr>";
+        silent = false;
+        desc = "telescope find files";
+      }
+      {
+        key = "<leader>h";
+        mode = ["n"];
+        action = "<cmd>Telescope help_tags<cr>";
+        silent = false;
+        desc = "telescope help tags";
+      }
+      {
+        key = "<leader><space>";
+        mode = ["n"];
+        action = "<cmd>Telescope buffers<cr>";
+        silent = false;
+        desc = "telescope buffers";
+      }
+      {
+        key = "<leader>m";
+        mode = ["n"];
+        action = "<cmd>MarkdownPreview<cr>";
+        silent = false;
+        desc = "MarkdownPreview";
+      }
       # divers
     ];
   };
