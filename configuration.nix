@@ -14,7 +14,7 @@ isMaximal: {
     };
 
     spellcheck = {
-      enable = true;
+      enable = false;
     };
 
     lsp = {
@@ -71,7 +71,7 @@ isMaximal: {
 
       # Language modules that are not as common.
       assembly.enable = false;
-      astro.enable = false;
+      astro.enable = true;
       nu.enable = false;
       csharp.enable = false;
       julia.enable = false;
@@ -114,16 +114,18 @@ isMaximal: {
     statusline = {
       lualine = {
         enable = true;
-        theme = "catppuccin";
+        # theme = "catppuccin";
+        # theme = "nord";
+        theme = "auto";
       };
     };
 
     theme = {
       enable = true;
-      transparent = false;
-      name = "catppuccin"; style = "mocha";
+      transparent = true;
+      # name = "catppuccin"; style = "mocha";
       # name = "gruvbox"; style = "dark";
-      # name = "nord";
+      name = "nord";
     };
 
     autopairs.nvim-autopairs.enable = true;
@@ -172,7 +174,8 @@ isMaximal: {
 
     dashboard = {
       dashboard-nvim.enable = false;
-      alpha.enable = isMaximal;
+      # alpha.enable = isMaximal;
+      alpha.enable = true;
     };
 
     notify = {
@@ -199,6 +202,7 @@ isMaximal: {
         leap.enable = true;
         precognition.enable = isMaximal;
       };
+
       images = {
         image-nvim.enable = false;
         img-clip.enable = isMaximal;
@@ -231,7 +235,7 @@ isMaximal: {
         navbuddy.enable = isMaximal;
       };
       smartcolumn = {
-        enable = true;
+        enable = false;
         setupOpts.custom_colorcolumn = {
           # this is a freeform module, it's `buftype = int;` for configuring column position
           nix = "110";
@@ -274,7 +278,8 @@ isMaximal: {
       { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
       { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
       { key = "<leader>c";       mode = ["n"]; action = "<cmd>close<cr>";                     silent = false; desc = "close window"; }
-      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>";                   silent = false; desc = "quitall"; }
+      { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                   silent = false; desc = "quitall"; }
+      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>"; silent = false; desc = "quitall"; }
       # Telescope
       { key = "<leader>cc";      mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
       { key = "<leader>f";       mode = ["n"]; action = "<cmd>Telescope find_files<cr>";      silent = false; desc = "telescope find files"; }
