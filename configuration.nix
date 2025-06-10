@@ -1,3 +1,4 @@
+#
 # This is test configuration git branch devel
 #
 isMaximal: {
@@ -142,12 +143,23 @@ isMaximal: {
     };
 
     #--- slm ---
-    #-- plugins - true
+    #-- plugins/true
+    statusline = {
+      lualine = {
+        enable = true;
+        theme = "auto";
+      };
+    };
+
+    comments = {
+      comment-nvim.enable = true;
+    };
+
     autopairs.nvim-autopairs.enable = true;
-    statusline = { lualine = { enable = true; theme = "auto"; }; };
-    comments = {comment-nvim.enable = true;};
-    #-- plugins - false
+
+    #-- plugins/false
     session = {nvim-session-manager.enable = false;};
+
     #-- keymaps
     keymaps = [
       # save, quit + delete
