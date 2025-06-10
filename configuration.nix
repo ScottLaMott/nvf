@@ -150,8 +150,7 @@ isMaximal: {
 
     dashboard = {
       dashboard-nvim.enable = false;
-      # alpha.enable = isMaximal;
-      alpha.enable = true;
+      alpha.enable = false;
     };
 
     notify = {
