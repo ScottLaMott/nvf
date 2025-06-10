@@ -94,7 +94,7 @@ isMaximal: {
       codewindow.enable = isMaximal; # lighter, faster, and uses lua for configuration
     };
 
-    dashboard = { dashboard-nvim.enable = true; # alpha.enable = true;
+    dashboard = { dashboard-nvim.enable = true; alpha.enable = true;
     };
 
     projects = { project-nvim.enable = isMaximal; };
