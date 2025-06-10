@@ -1,3 +1,4 @@
+#
 # This is test configuration git branch devel
 #
 isMaximal: {
