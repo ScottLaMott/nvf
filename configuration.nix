@@ -1,14 +1,8 @@
 # This is test configuration git branch devel
 #
 isMaximal: {
-  config.vim = {
-    viAlias = false;
-    vimAlias = false;
-    debugMode = {
-      enable = false;
-      level = 16;
-      logFile = "/tmp/nvim.log";
-    };
+  config.vim = { viAlias = false; vimAlias = false;
+    debugMode = { enable = false; level = 16; logFile = "/tmp/nvim.log"; };
 
     spellcheck = {enable = false;};
 
@@ -17,34 +11,22 @@ isMaximal: {
       # the LSP API.
       enable = true;
 
-      formatOnSave = true;
-      # formatOnSave = false;
-      lspkind.enable = false;
-      lightbulb.enable = true;
-      lspsaga.enable = false;
-      trouble.enable = true;
-      lspSignature.enable = !isMaximal; # conflicts with blink in maximal
-      otter-nvim.enable = isMaximal;
-      nvim-docs-view.enable = isMaximal;
+      # formatOnSave = true;
+      formatOnSave = false; lspkind.enable = false; lightbulb.enable = true; lspsaga.enable = false; trouble.enable = true;
+      otter-nvim.enable = isMaximal; lspSignature.enable = !isMaximal; # conflicts with blink in maximal
+      # nvim-docs-view.enable = isMaximal;
+      nvim-docs-view.enable = true;
     };
 
-    debugger = {
-      nvim-dap = {
-        enable = true;
-        ui.enable = true;
-      };
-    };
+    debugger = { nvim-dap = { enable = true; ui.enable = true; }; };
 
     # This section does not include a comprehensive list of available language modules.
     # To list all available language module options, please visit the nvf manual.
     languages = {
-      enableFormat = true;
-      enableTreesitter = true;
-      enableExtraDiagnostics = true;
+      enableFormat = true; enableTreesitter = true; enableExtraDiagnostics = true;
 
       # Languages that will be supported in default and maximal configurations.
-      nix.enable = true;
-      markdown.enable = true;
+      nix.enable = true; markdown.enable = true;
 
       # Nim LSP is broken on Darwin and therefore
       # should be disabled by default. Users may still enable
@@ -68,19 +50,13 @@ isMaximal: {
       cellular-automaton.enable = false;
     };
 
-    statusline = {
-      lualine = {
-        enable = true;
-        theme = "auto";
-      };
-    };
+    statusline = { lualine = { enable = true; theme = "auto"; }; };
 
     theme = {
-      enable = true;
-      transparent = true;
+      enable = true; transparent = true;
+
       # name = "catppuccin"; style = "mocha";
-      name = "gruvbox";
-      style = "dark";
+      name = "gruvbox"; style = "dark";
       # name = "nord";
     };
 
@@ -97,23 +73,13 @@ isMaximal: {
 
     snippets.luasnip.enable = true;
 
-    filetree = {
-      neo-tree = {
-        enable = false;
-      };
-    };
+    filetree = { neo-tree = { enable = false; }; };
 
-    tabline = {
-      nvimBufferline.enable = false;
-    };
+    tabline = { nvimBufferline.enable = false; };
 
     treesitter.context.enable = true;
 
-    binds = {
-      whichKey.enable = true;
-      cheatsheet.enable = true;
-      hardtime-nvim.enable = isMaximal;
-    };
+    binds = { whichKey.enable = true; cheatsheet.enable = true; hardtime-nvim.enable = isMaximal; };
 
     telescope.enable = true;
 
@@ -128,29 +94,17 @@ isMaximal: {
       codewindow.enable = isMaximal; # lighter, faster, and uses lua for configuration
     };
 
-    dashboard = {
-      dashboard-nvim.enable = true;
-      # alpha.enable = true;
+    dashboard = { dashboard-nvim.enable = true; # alpha.enable = true;
     };
 
-    notify = {
-      nvim-notify.enable = true;
-    };
+    notify = { nvim-notify.enable = true; };
 
-    projects = {
-      project-nvim.enable = isMaximal;
-    };
+    projects = { project-nvim.enable = isMaximal; };
 
     utility = {
-      ccc.enable = false;
-      vim-wakatime.enable = false;
-      diffview-nvim.enable = true;
-      yanky-nvim.enable = false;
-      oil-nvim.enable = true;
-      icon-picker.enable = isMaximal;
-      surround.enable = isMaximal;
-      leetcode-nvim.enable = isMaximal;
-      multicursors.enable = isMaximal;
+      ccc.enable = false; vim-wakatime.enable = false; diffview-nvim.enable = true;
+      yanky-nvim.enable = false; oil-nvim.enable = true; icon-picker.enable = isMaximal;
+      surround.enable = isMaximal; leetcode-nvim.enable = isMaximal; multicursors.enable = isMaximal;
 
       motion = {
         hop.enable = true;
@@ -163,9 +117,7 @@ isMaximal: {
       };
     };
 
-    notes = {
-      todo-comments.enable = true;
-    };
+    notes = { todo-comments.enable = true; };
 
     terminal = {
       toggleterm = {
@@ -217,77 +169,17 @@ isMaximal: {
 
     keymaps = [
       # save, quit + delete
-      {
-        key = "<leader>bd";
-        mode = ["n"];
-        action = "<cmd>bdelete<cr>";
-        silent = false;
-        desc = "bdelete";
-      }
-      {
-        key = "<leader>q";
-        mode = ["n"];
-        action = "<cmd>quit<cr>";
-        silent = false;
-        desc = "quit";
-      }
-      {
-        key = "<leader>c";
-        mode = ["n"];
-        action = "<cmd>close<cr>";
-        silent = false;
-        desc = "close window";
-      }
-      {
-        key = "<leader>o";
-        mode = ["n"];
-        action = "<cmd>only<cr>";
-        silent = false;
-        desc = "quitall";
-      }
-      {
-        key = "<leader>qa";
-        mode = ["n"];
-        action = "<cmd>quitall<cr>";
-        silent = false;
-        desc = "quitall";
-      }
+      { key = "<leader>bd"; mode = ["n"]; action = "<cmd>bdelete<cr>"; silent = false; desc = "bdelete"; }
+      { key = "<leader>q"; mode = ["n"]; action = "<cmd>quit<cr>"; silent = false; desc = "quit"; }
+      { key = "<leader>c"; mode = ["n"]; action = "<cmd>close<cr>"; silent = false; desc = "close window"; }
+      { key = "<leader>o"; mode = ["n"]; action = "<cmd>only<cr>"; silent = false; desc = "quitall"; }
+      { key = "<leader>qa"; mode = ["n"]; action = "<cmd>quitall<cr>"; silent = false; desc = "quitall"; }
       # Telescope
-      {
-        key = "<leader>cc";
-        mode = ["n"];
-        action = "<cmd>Telescope command_history<cr>";
-        silent = false;
-        desc = "telescope command history";
-      }
-      {
-        key = "<leader>f";
-        mode = ["n"];
-        action = "<cmd>Telescope find_files<cr>";
-        silent = false;
-        desc = "telescope find files";
-      }
-      {
-        key = "<leader>h";
-        mode = ["n"];
-        action = "<cmd>Telescope help_tags<cr>";
-        silent = false;
-        desc = "telescope help tags";
-      }
-      {
-        key = "<leader><space>";
-        mode = ["n"];
-        action = "<cmd>Telescope buffers<cr>";
-        silent = false;
-        desc = "telescope buffers";
-      }
-      {
-        key = "<leader>m";
-        mode = ["n"];
-        action = "<cmd>MarkdownPreview<cr>";
-        silent = false;
-        desc = "MarkdownPreview";
-      }
+      { key = "<leader>cc"; mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
+      { key = "<leader>f"; mode = ["n"]; action = "<cmd>Telescope find_files<cr>"; silent = false; desc = "telescope find files"; }
+      { key = "<leader>h"; mode = ["n"]; action = "<cmd>Telescope help_tags<cr>"; silent = false; desc = "telescope help tags"; }
+      { key = "<leader><space>"; mode = ["n"]; action = "<cmd>Telescope buffers<cr>"; silent = false; desc = "telescope buffers"; }
+      { key = "<leader>m"; mode = ["n"]; action = "<cmd>MarkdownPreview<cr>"; silent = false; desc = "MarkdownPreview"; }
       # divers
     ];
   };
