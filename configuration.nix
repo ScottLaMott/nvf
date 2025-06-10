@@ -68,16 +68,19 @@ isMaximal: {
     };
 
     snippets.luasnip.enable = true;
-
-    filetree = { neo-tree = { enable = false; }; };
-
-    tabline = { nvimBufferline.enable = false; };
-
+    telescope.enable = true;
     treesitter.context.enable = true;
+    notify = { nvim-notify.enable = true; };
+    notes = { todo-comments.enable = true; };
+
+    # filetree = { neo-tree = { enable = false; }; };
+    # tabline = { nvimBufferline.enable = false; };
+    # gestures = { gesture-nvim.enable = false; };
+    # presence = { neocord.enable = false; };
 
     binds = { whichKey.enable = true; cheatsheet.enable = true; hardtime-nvim.enable = isMaximal; };
-
-    telescope.enable = true;
+    # binds = { whichKey.enable = true; };
+    # binds = { cheatsheet.enable = true; hardtime-nvim.enable = isMaximal; };
 
     git = {
       enable = true;
@@ -92,8 +95,6 @@ isMaximal: {
 
     dashboard = { dashboard-nvim.enable = true; # alpha.enable = true;
     };
-
-    notify = { nvim-notify.enable = true; };
 
     projects = { project-nvim.enable = isMaximal; };
 
@@ -113,8 +114,6 @@ isMaximal: {
       };
     };
 
-    notes = { todo-comments.enable = true; };
-
     terminal = {
       toggleterm = {
         enable = true;
@@ -132,13 +131,6 @@ isMaximal: {
         enable = isMaximal;
         navbuddy.enable = isMaximal;
       };
-      smartcolumn = {
-        enable = false;
-        setupOpts.custom_colorcolumn = {
-          # this is a freeform module, it's `buftype = int;` for configuring column position
-          nix = "110"; ruby = "120"; java = "130"; go = ["90" "130"];
-        };
-      };
       fastaction.enable = true;
     };
 
@@ -148,9 +140,6 @@ isMaximal: {
       codecompanion-nvim.enable = false;
       avante-nvim.enable = isMaximal;
     };
-
-    gestures = {gesture-nvim.enable = false;};
-    presence = {neocord.enable = false;};
 
     #--- slm ---
     #-- plugins - true
