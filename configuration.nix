@@ -50,17 +50,13 @@ isMaximal: {
       cellular-automaton.enable = false;
     };
 
-    statusline = { lualine = { enable = true; theme = "auto"; }; };
-
     theme = {
       enable = true; transparent = true;
 
-      # name = "catppuccin"; style = "mocha";
-      name = "gruvbox"; style = "dark";
+      name = "catppuccin"; style = "mocha";
+      # name = "gruvbox"; style = "dark";
       # name = "nord";
     };
-
-    autopairs.nvim-autopairs.enable = true;
 
     # nvf provides various autocomplete options. The tried and tested nvim-cmp
     # is enabled in default package, because it does not trigger a build. We
@@ -140,10 +136,7 @@ isMaximal: {
         enable = false;
         setupOpts.custom_colorcolumn = {
           # this is a freeform module, it's `buftype = int;` for configuring column position
-          nix = "110";
-          ruby = "120";
-          java = "130";
-          go = ["90" "130"];
+          nix = "110"; ruby = "120"; java = "130"; go = ["90" "130"];
         };
       };
       fastaction.enable = true;
@@ -151,22 +144,22 @@ isMaximal: {
 
     assistant = {
       chatgpt.enable = false;
-      copilot = {
-        enable = false;
-        cmp.enable = isMaximal;
-      };
+      copilot = { enable = false; cmp.enable = isMaximal; };
       codecompanion-nvim.enable = false;
       avante-nvim.enable = isMaximal;
     };
 
-    session = {nvim-session-manager.enable = false;};
-
     gestures = {gesture-nvim.enable = false;};
-
-    comments = {comment-nvim.enable = true;};
-
     presence = {neocord.enable = false;};
 
+    #--- slm ---
+    #-- plugins - true
+    autopairs.nvim-autopairs.enable = true;
+    statusline = { lualine = { enable = true; theme = "auto"; }; };
+    comments = {comment-nvim.enable = true;};
+    #-- plugins - false
+    session = {nvim-session-manager.enable = false;};
+    #-- keymaps
     keymaps = [
       # save, quit + delete
       { key = "<leader>bd"; mode = ["n"]; action = "<cmd>bdelete<cr>"; silent = false; desc = "bdelete"; }
@@ -183,4 +176,5 @@ isMaximal: {
       # divers
     ];
   };
+
 }
