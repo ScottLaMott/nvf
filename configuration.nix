@@ -101,7 +101,7 @@ isMaximal: {
       transparent = true;
       # name = "catppuccin"; style = "mocha";
       # name = "gruvbox"; style = "dark";
-      name = "nord";
+      # name = "nord";
     };
 
     autopairs.nvim-autopairs.enable = true;
