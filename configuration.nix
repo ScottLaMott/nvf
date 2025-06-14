@@ -90,8 +90,6 @@ isMaximal: {
     statusline = {
       lualine = {
         enable = true;
-        # theme = "catppuccin";
-        # theme = "nord";
         theme = "auto";
       };
     };
@@ -99,9 +97,16 @@ isMaximal: {
     theme = {
       enable = true;
       transparent = true;
+
+      # dark background
+      name = "gruvbox"; style = "dark";
       # name = "catppuccin"; style = "mocha";
-      # name = "gruvbox"; style = "dark";
-      name = "nord";
+      # name = "nord";
+      # name = "solarized-osaka";
+      # name = "base16";
+
+      # light background
+      # name = "gruvbox"; style = "light";
     };
 
     autopairs.nvim-autopairs.enable = true;
@@ -253,8 +258,8 @@ isMaximal: {
       { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
       { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
       { key = "<leader>c";       mode = ["n"]; action = "<cmd>close<cr>";                     silent = false; desc = "close window"; }
-      { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                   silent = false; desc = "quitall"; }
-      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>"; silent = false; desc = "quitall"; }
+      { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                      silent = false; desc = "quitall"; }
+      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>";                   silent = false; desc = "quitall"; }
       # Telescope
       { key = "<leader>cc";      mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
       { key = "<leader>f";       mode = ["n"]; action = "<cmd>Telescope find_files<cr>";      silent = false; desc = "telescope find files"; }
