@@ -100,6 +100,7 @@ isMaximal: {
       enable = true;
       transparent = true;
       # name = "catppuccin"; style = "mocha";
+      name = "gruvbox"; style = "light";
       # name = "gruvbox"; style = "dark";
       # name = "nord";
     };
