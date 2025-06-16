@@ -97,7 +97,6 @@ isMaximal: {
     theme = {
       enable = true;
       transparent = true;
-<<<<<<< HEAD
 
       # dark background
       name = "github"; style = "dark_high_contrast";
