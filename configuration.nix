@@ -54,8 +54,15 @@ isMaximal: {
     theme = {
       enable = true; transparent = true;
 
-      name = "catppuccin"; style = "mocha";
+      # name = "catppuccin"; style = "mocha";
       # name = "gruvbox"; style = "dark";
+      # name = "dracula"; style = "dark";
+      # name = "github"; style = "dark";
+      # name = "github"; style = "dark_high_contrast";
+      # name = "github"; style = "light_high_contrast";
+      # name = "github"; style = "dark_tritanopia";
+      # name = "github"; style = "light_tritanopia";
+      name = "github"; style = "light_default";
       # name = "nord";
     };
 
