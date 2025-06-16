@@ -99,14 +99,19 @@ isMaximal: {
       transparent = true;
 
       # dark background
-      name = "gruvbox"; style = "dark";
+      name = "github"; style = "dark_high_contrast";
+      # name = "gruvbox"; style = "dark";
       # name = "catppuccin"; style = "mocha";
-      # name = "nord";
-      # name = "solarized-osaka";
-      # name = "base16";
 
       # light background
-      # name = "gruvbox"; style = "light";
+      # name = "github"; style = "light_high_contrast";
+      # name = "dracula"; style = "light";
+
+      # name = "gruvbox"; style = "dark";
+      # name = "github"; style = "dark_tritanopia";
+      # name = "github"; style = "light_tritanopia";
+      # name = "nord";
+      # name = "base16";
     };
 
     autopairs.nvim-autopairs.enable = true;
