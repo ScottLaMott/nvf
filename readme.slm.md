@@ -14,6 +14,8 @@
 
 ### Todos
 
+- bitwarden installieren
+  - github sign in 
 - harpoon
 - markdown-preview
 
