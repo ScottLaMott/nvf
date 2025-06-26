@@ -178,7 +178,7 @@ isMaximal: {
       yanky-nvim.enable = false;
       oil-nvim.enable = true;
       icon-picker.enable = isMaximal;
-      surround.enable = isMaximal;
+      surround.enable = true;
       leetcode-nvim.enable = isMaximal;
       multicursors.enable = isMaximal;
 
