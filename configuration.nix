@@ -192,6 +192,11 @@ isMaximal: {
         image-nvim.enable = false;
         img-clip.enable = isMaximal;
       };
+
+      preview = {
+        markdownPreview.enable = true;
+      };
+
     };
 
     notes = {
