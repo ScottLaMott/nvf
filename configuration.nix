@@ -99,7 +99,7 @@ isMaximal: {
       transparent = true;
 
       # dark background
-      name = "github"; style = "dark_high_contrast";
+      # name = "github"; style = "dark_high_contrast";
       # name = "gruvbox"; style = "dark";
       # name = "catppuccin"; style = "mocha";
 
@@ -111,7 +111,25 @@ isMaximal: {
       # name = "github"; style = "dark_tritanopia";
       # name = "github"; style = "light_tritanopia";
       # name = "nord";
-      # name = "base16";
+
+      #--- base16 colorschemes
+      name = "base16";
+      base16-colors.base00 = "#161616";
+      base16-colors.base01 = "#262626";
+      base16-colors.base02 = "#393939";
+      base16-colors.base03 = "#525252";
+      base16-colors.base04 = "#dde1e6";
+      base16-colors.base05 = "#f2f4f8";
+      base16-colors.base06 = "#ffffff";
+      base16-colors.base07 = "#08bdba";
+      base16-colors.base08 = "#3ddbd9";
+      base16-colors.base09 = "#78a9ff";
+      base16-colors.base0A = "#ee5396";
+      base16-colors.base0B = "#33b1ff";
+      base16-colors.base0C = "#ff7eb6";
+      base16-colors.base0D = "#42be65";
+      base16-colors.base0E = "#be95ff";
+      base16-colors.base0F = "#82cfff";
     };
 
     autopairs.nvim-autopairs.enable = true;
