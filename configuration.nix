@@ -113,7 +113,7 @@ isMaximal: {
       # name = "nord";
 
       #--- base16 colorschemes
-      # name = "base16";
+      name = "base16";
       base16-colors.base00 = "#161616";
       base16-colors.base01 = "#262626";
       base16-colors.base02 = "#393939";
