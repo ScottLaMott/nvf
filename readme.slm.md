@@ -3,6 +3,7 @@
 ### Beschreibung
 
 - Die Grundkonfiguration wird in ./configuration.nix gemacht. Plugins werden hier ein/ausgeschaltet.
+  - keymaps (./configuration.nix)
 - plugins sind in ~/.local/share/nvim/lazy
 
 ### Plugins
