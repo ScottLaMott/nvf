@@ -295,6 +295,7 @@ isMaximal: {
       { key = "<leader><space>"; mode = ["n"]; action = "<cmd>Telescope buffers<cr>";         silent = false; desc = "telescope buffers"; }
       { key = "<leader>m";       mode = ["n"]; action = "<cmd>MarkdownPreview<cr>";           silent = false; desc = "MarkdownPreview"; }
       # divers
+      { key = "<C-h>";           mode = ["n"]; action = ":wincmd v<cr>";               silent = false; desc = "slm command c-h"; }
     ];
   };
 }
