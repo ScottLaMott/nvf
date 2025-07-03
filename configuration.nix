@@ -282,20 +282,24 @@ isMaximal: {
     };
 
     keymaps = [
-      # save, quit + delete
+      #-- save, quit + delete
       { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
       { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
       { key = "<leader>c";       mode = ["n"]; action = "<cmd>close<cr>";                     silent = false; desc = "close window"; }
       { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                      silent = false; desc = "quitall"; }
       { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>";                   silent = false; desc = "quitall"; }
-      # Telescope
+      #-- Telescope
       { key = "<leader>cc";      mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
       { key = "<leader>f";       mode = ["n"]; action = "<cmd>Telescope find_files<cr>";      silent = false; desc = "telescope find files"; }
       { key = "<leader>h";       mode = ["n"]; action = "<cmd>Telescope help_tags<cr>";       silent = false; desc = "telescope help tags"; }
       { key = "<leader><space>"; mode = ["n"]; action = "<cmd>Telescope buffers<cr>";         silent = false; desc = "telescope buffers"; }
       { key = "<leader>m";       mode = ["n"]; action = "<cmd>MarkdownPreview<cr>";           silent = false; desc = "MarkdownPreview"; }
-      # divers
-      # { key = "<C-h>";           mode = ["n"]; action = ":wincmd v<cr>";               silent = false; desc = "slm command c-h"; }
+      #-- window commands
+      { key = "<C-h>";           mode = ["n"]; action = ":wincmd h<cr>";                      silent = true; desc = "wincmd h"; }
+      { key = "<C-j>";           mode = ["n"]; action = ":wincmd j<cr>";                      silent = true; desc = "wincmd j"; }
+      { key = "<C-k>";           mode = ["n"]; action = ":wincmd k<cr>";                      silent = true; desc = "wincmd k"; }
+      { key = "<C-l>";           mode = ["n"]; action = ":wincmd l<cr>";                      silent = true; desc = "wincmd l"; }
+      { key = "<C-v>";           mode = ["n"]; action = ":wincmd v<cr>";                      silent = true; desc = "wincmd v"; }
     ];
   };
 }
