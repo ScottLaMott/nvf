@@ -47,7 +47,7 @@ isMaximal: {
 
       # Language modules that are not as common.
       assembly.enable = false;
-      astro.enable = true;
+      astro.enable = false;
       nu.enable = false;
       csharp.enable = false;
       julia.enable = false;
@@ -113,7 +113,9 @@ isMaximal: {
       # name = "nord";
 
       #--- base16 colorschemes
-      name = "base16";
+      # name = "base16";
+      name = "base16"; style = "ashes";
+
       base16-colors.base00 = "#161616";
       base16-colors.base01 = "#262626";
       base16-colors.base02 = "#393939";
