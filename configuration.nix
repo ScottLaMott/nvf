@@ -14,8 +14,7 @@ isMaximal: {
     };
 
     spellcheck = {
-      enable = true;
-      programmingWordlist.enable = isMaximal;
+      enable = false;
     };
 
     lsp = {
@@ -23,7 +22,7 @@ isMaximal: {
       # the LSP API.
       enable = true;
 
-      formatOnSave = true;
+      formatOnSave = false;
       lspkind.enable = false;
       lightbulb.enable = true;
       lspsaga.enable = false;
@@ -33,12 +32,7 @@ isMaximal: {
       nvim-docs-view.enable = isMaximal;
     };
 
-    debugger = {
-      nvim-dap = {
-        enable = true;
-        ui.enable = true;
-      };
-    };
+    debugger = { nvim-dap = { enable = true; ui.enable = true; }; };
 
     # This section does not include a comprehensive list of available language modules.
     # To list all available language module options, please visit the nvf manual.
@@ -50,25 +44,6 @@ isMaximal: {
       # Languages that will be supported in default and maximal configurations.
       nix.enable = true;
       markdown.enable = true;
-
-      # Languages that are enabled in the maximal configuration.
-      bash.enable = isMaximal;
-      clang.enable = isMaximal;
-      css.enable = isMaximal;
-      html.enable = isMaximal;
-      sql.enable = isMaximal;
-      java.enable = isMaximal;
-      kotlin.enable = isMaximal;
-      ts.enable = isMaximal;
-      go.enable = isMaximal;
-      lua.enable = isMaximal;
-      zig.enable = isMaximal;
-      python.enable = isMaximal;
-      typst.enable = isMaximal;
-      rust = {
-        enable = isMaximal;
-        crates.enable = isMaximal;
-      };
 
       # Language modules that are not as common.
       assembly.enable = false;
@@ -115,15 +90,48 @@ isMaximal: {
     statusline = {
       lualine = {
         enable = true;
-        theme = "catppuccin";
+        theme = "auto";
       };
     };
 
     theme = {
       enable = true;
-      name = "catppuccin";
-      style = "mocha";
-      transparent = false;
+      transparent = true;
+
+      # dark background
+      # name = "github"; style = "dark_high_contrast";
+      # name = "gruvbox"; style = "dark";
+      # name = "catppuccin"; style = "mocha";
+
+      # light background
+      # name = "github"; style = "light_high_contrast";
+      # name = "dracula"; style = "light";
+
+      # name = "gruvbox"; style = "dark";
+      # name = "github"; style = "dark_tritanopia";
+      # name = "github"; style = "light_tritanopia";
+      # name = "nord";
+
+      #--- base16 colorschemes
+      # name = "base16";
+      name = "base16"; style = "ashes";
+
+      base16-colors.base00 = "#161616";
+      base16-colors.base01 = "#262626";
+      base16-colors.base02 = "#393939";
+      base16-colors.base03 = "#525252";
+      base16-colors.base04 = "#dde1e6";
+      base16-colors.base05 = "#f2f4f8";
+      base16-colors.base06 = "#ffffff";
+      base16-colors.base07 = "#08bdba";
+      base16-colors.base08 = "#3ddbd9";
+      base16-colors.base09 = "#78a9ff";
+      base16-colors.base0A = "#ee5396";
+      base16-colors.base0B = "#33b1ff";
+      base16-colors.base0C = "#ff7eb6";
+      base16-colors.base0D = "#42be65";
+      base16-colors.base0E = "#be95ff";
+      base16-colors.base0F = "#82cfff";
     };
 
     autopairs.nvim-autopairs.enable = true;
@@ -141,12 +149,12 @@ isMaximal: {
 
     filetree = {
       neo-tree = {
-        enable = true;
+        enable = false;
       };
     };
 
     tabline = {
-      nvimBufferline.enable = true;
+      nvimBufferline.enable = false;
     };
 
     treesitter.context.enable = true;
@@ -172,7 +180,7 @@ isMaximal: {
 
     dashboard = {
       dashboard-nvim.enable = false;
-      alpha.enable = isMaximal;
+      alpha.enable = false;
     };
 
     notify = {
@@ -188,8 +196,9 @@ isMaximal: {
       vim-wakatime.enable = false;
       diffview-nvim.enable = true;
       yanky-nvim.enable = false;
+      oil-nvim.enable = true;
       icon-picker.enable = isMaximal;
-      surround.enable = isMaximal;
+      surround.enable = true;
       leetcode-nvim.enable = isMaximal;
       multicursors.enable = isMaximal;
       smart-splits.enable = isMaximal;
@@ -201,10 +210,16 @@ isMaximal: {
         leap.enable = true;
         precognition.enable = isMaximal;
       };
+
       images = {
         image-nvim.enable = false;
         img-clip.enable = isMaximal;
       };
+
+      preview = {
+        markdownPreview.enable = true;
+      };
+
     };
 
     notes = {
@@ -233,7 +248,7 @@ isMaximal: {
         navbuddy.enable = isMaximal;
       };
       smartcolumn = {
-        enable = true;
+        enable = false;
         setupOpts.custom_colorcolumn = {
           # this is a freeform module, it's `buftype = int;` for configuring column position
           nix = "110";
@@ -270,5 +285,26 @@ isMaximal: {
     presence = {
       neocord.enable = false;
     };
+
+    keymaps = [
+      #-- save, quit + delete
+      { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
+      { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
+      { key = "<leader>c";       mode = ["n"]; action = "<cmd>close<cr>";                     silent = false; desc = "close window"; }
+      { key = "<leader>o";       mode = ["n"]; action = "<cmd>only<cr>";                      silent = false; desc = "quitall"; }
+      { key = "<leader>qa";      mode = ["n"]; action = "<cmd>quitall<cr>";                   silent = false; desc = "quitall"; }
+      #-- Telescope
+      { key = "<leader>cc";      mode = ["n"]; action = "<cmd>Telescope command_history<cr>"; silent = false; desc = "telescope command history"; }
+      { key = "<leader>f";       mode = ["n"]; action = "<cmd>Telescope find_files<cr>";      silent = false; desc = "telescope find files"; }
+      { key = "<leader>h";       mode = ["n"]; action = "<cmd>Telescope help_tags<cr>";       silent = false; desc = "telescope help tags"; }
+      { key = "<leader><space>"; mode = ["n"]; action = "<cmd>Telescope buffers<cr>";         silent = false; desc = "telescope buffers"; }
+      { key = "<leader>m";       mode = ["n"]; action = "<cmd>MarkdownPreview<cr>";           silent = false; desc = "MarkdownPreview"; }
+      #-- window commands
+      { key = "<C-h>";           mode = ["n"]; action = ":wincmd h<cr>";                      silent = true; desc = "wincmd h"; }
+      { key = "<C-j>";           mode = ["n"]; action = ":wincmd j<cr>";                      silent = true; desc = "wincmd j"; }
+      { key = "<C-k>";           mode = ["n"]; action = ":wincmd k<cr>";                      silent = true; desc = "wincmd k"; }
+      { key = "<C-l>";           mode = ["n"]; action = ":wincmd l<cr>";                      silent = true; desc = "wincmd l"; }
+      { key = "<C-v>";           mode = ["n"]; action = ":wincmd v<cr>";                      silent = true; desc = "wincmd v"; }
+    ];
   };
 }

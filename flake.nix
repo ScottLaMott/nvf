@@ -91,7 +91,7 @@
     systems.url = "github:nix-systems/default";
 
     ## Basic Inputs
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
 
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
