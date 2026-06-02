@@ -5,20 +5,24 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) literalExpression mkEnableOption mkOption;
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.meta) getExe;
-  inherit (lib.lists) isList;
-  inherit (lib.types) bool either enum listOf package str;
+  inherit (lib) genAttrs;
+  inherit (lib.types) bool enum listOf;
   inherit (lib.nvim.types) diagnostics mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
   inherit (lib.nvim.dag) entryBefore;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.lua;
-  defaultFormat = "stylua";
+
+  defaultServers = ["lua-language-server"];
+  servers = ["lua-language-server"];
+
+  defaultFormat = ["stylua"];
   formats = {
     stylua = {
-      package = pkgs.stylua;
+      command = getExe pkgs.stylua;
     };
   };
 
@@ -26,6 +30,9 @@
   diagnosticsProviders = {
     luacheck = {
       package = pkgs.luajitPackages.luacheck;
+    };
+    selene = {
+      package = pkgs.selene;
     };
   };
 in {
@@ -38,17 +45,26 @@ in {
   options.vim.languages.lua = {
     enable = mkEnableOption "Lua language support";
     treesitter = {
-      enable = mkEnableOption "Lua Treesitter support" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Lua Treesitter support"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "lua";
     };
 
     lsp = {
-      enable = mkEnableOption "Lua LSP support via LuaLS" // {default = config.vim.lsp.enable;};
-
-      package = mkOption {
-        description = "LuaLS package, or the command to run as a list of strings";
-        type = either package (listOf str);
-        default = pkgs.lua-language-server;
+      enable =
+        mkEnableOption "Lua LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
+        description = "Lua LSP server to use";
       };
 
       lazydev.enable = mkEnableOption "lazydev.nvim integration, useful for neovim plugin developers";
@@ -58,23 +74,23 @@ in {
       enable = mkOption {
         type = bool;
         default = config.vim.languages.enableFormat;
+        defaultText = literalExpression "config.vim.languages.enableFormat";
         description = "Enable Lua formatting";
       };
       type = mkOption {
-        type = enum (attrNames formats);
+        type = listOf (enum (attrNames formats));
         default = defaultFormat;
         description = "Lua formatter to use";
-      };
-
-      package = mkOption {
-        type = package;
-        default = formats.${cfg.format.type}.package;
-        description = "Lua formatter package";
       };
     };
 
     extraDiagnostics = {
-      enable = mkEnableOption "extra Lua diagnostics" // {default = config.vim.languages.enableExtraDiagnostics;};
+      enable =
+        mkEnableOption "extra Lua diagnostics"
+        // {
+          default = config.vim.languages.enableExtraDiagnostics;
+          defaultText = literalExpression "config.vim.languages.enableExtraDiagnostics";
+        };
       types = diagnostics {
         langDesc = "Lua";
         inherit diagnosticsProviders;
@@ -91,23 +107,17 @@ in {
 
     (mkIf cfg.enable (mkMerge [
       (mkIf cfg.lsp.enable {
-        vim.lsp.lspconfig.enable = true;
-        vim.lsp.lspconfig.sources.lua-lsp = ''
-          lspconfig.lua_ls.setup {
-            capabilities = capabilities;
-            on_attach = default_on_attach;
-            cmd = ${
-            if isList cfg.lsp.package
-            then expToLua cfg.lsp.package
-            else ''{"${getExe cfg.lsp.package}"}''
-          };
-          }
-        '';
+        vim.lsp = {
+          presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+          servers = genAttrs cfg.lsp.servers (_: {
+            filetypes = ["lua"];
+          });
+        };
       })
 
       (mkIf cfg.lsp.lazydev.enable {
         vim.startPlugins = ["lazydev-nvim"];
-        vim.pluginRC.lazydev = entryBefore ["lua-lsp"] ''
+        vim.pluginRC.lazydev = entryBefore ["lsp-servers"] ''
           require("lazydev").setup({
             enabled = function(root_dir)
               return not vim.uv.fs_stat(root_dir .. "/.luarc.json")
@@ -120,9 +130,14 @@ in {
       (mkIf cfg.format.enable {
         vim.formatter.conform-nvim = {
           enable = true;
-          setupOpts.formatters_by_ft.lua = [cfg.format.type];
-          setupOpts.formatters.${cfg.format.type} = {
-            command = getExe cfg.format.package;
+          setupOpts = {
+            formatters_by_ft.lua = cfg.format.type;
+            formatters =
+              mapListToAttrs (name: {
+                inherit name;
+                value = formats.${name};
+              })
+              cfg.format.type;
           };
         };
       })

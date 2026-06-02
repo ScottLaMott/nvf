@@ -6,88 +6,44 @@
 }: let
   inherit (builtins) attrNames;
   inherit (lib.options) mkEnableOption mkOption literalExpression;
-  inherit (lib.meta) getExe;
+  inherit (lib.lists) flatten;
+  inherit (lib) genAttrs;
+  inherit (lib.meta) getExe getExe';
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either listOf package str bool;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib.types) enum package bool listOf;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
+  inherit (lib.nvim.types) deprecatedSingleOrListOf diagnostics;
+  inherit (lib.trivial) warn;
 
   cfg = config.vim.languages.python;
 
-  defaultServer = "basedpyright";
-  servers = {
-    pyright = {
-      package = pkgs.pyright;
-      lspConfig = ''
-        lspconfig.pyright.setup{
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/pyright-langserver", "--stdio"}''
-        }
-        }
-      '';
-    };
+  defaultServers = ["basedpyright"];
+  servers = ["pyrefly" "pyright" "basedpyright" "python-lsp-server" "ruff" "ty" "zuban"];
 
-    basedpyright = {
-      package = pkgs.basedpyright;
-      lspConfig = ''
-        lspconfig.basedpyright.setup{
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/basedpyright-langserver", "--stdio"}''
-        }
-        }
-      '';
-    };
-
-    python-lsp-server = {
-      package = pkgs.python3Packages.python-lsp-server;
-      lspConfig = ''
-        lspconfig.pylsp.setup{
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/pylsp"}''
-        }
-        }
-      '';
-    };
-  };
-
-  defaultFormat = "black";
+  defaultFormat = ["black"];
   formats = {
     black = {
-      package = pkgs.black;
+      command = getExe pkgs.black;
     };
 
     isort = {
-      package = pkgs.isort;
+      command = getExe pkgs.isort;
     };
 
-    black-and-isort = {
-      package = pkgs.writeShellApplication {
-        name = "black";
-        runtimeInputs = [pkgs.black pkgs.isort];
-        text = ''
-          black --quiet - "$@" | isort --profile black -
-        '';
-      };
-    };
+    # dummy option for backwards compat
+    black-and-isort = {};
 
     ruff = {
+      command = getExe pkgs.ruff;
+      args = ["format" "-"];
+    };
+
+    ruff-check = {
       package = pkgs.writeShellApplication {
-        name = "ruff";
+        name = "ruff-check";
         runtimeInputs = [pkgs.ruff];
         text = ''
-          ruff format -
+          ruff check --fix --exit-zero -
         '';
       };
     };
@@ -155,64 +111,75 @@
       '';
     };
   };
+  defaultDiagnosticsProvider = ["mypy"];
+  diagnosticsProviders = {
+    mypy = {
+      config = {
+        cmd = getExe' pkgs.mypy "mypy";
+      };
+    };
+  };
 in {
   options.vim.languages.python = {
     enable = mkEnableOption "Python language support";
 
     treesitter = {
-      enable = mkEnableOption "Python treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Python treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkOption {
         description = "Python treesitter grammar to use";
         type = package;
-        default = pkgs.vimPlugins.nvim-treesitter.builtGrammars.python;
+        default = pkgs.vimPlugins.nvim-treesitter.grammarPlugins.python;
       };
     };
 
     lsp = {
-      enable = mkEnableOption "Python LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "Python LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      server = mkOption {
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "Python LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "python LSP server package, or the command to run as a list of strings";
-        example = ''[lib.getExe pkgs.jdt-language-server "-data" "~/.cache/jdtls/workspace"]'';
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
       };
     };
 
     format = {
-      enable = mkEnableOption "Python formatting" // {default = config.vim.languages.enableFormat;};
+      enable =
+        mkEnableOption "Python formatting"
+        // {
+          default = config.vim.languages.enableFormat;
+          defaultText = literalExpression "config.vim.languages.enableFormat";
+        };
 
       type = mkOption {
-        description = "Python formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.python.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Python formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
+        description = "Python formatters to use";
       };
     };
 
     # TODO this implementation is very bare bones, I don't know enough python to implement everything
     dap = {
       enable = mkOption {
-        description = "Enable Python Debug Adapter";
         type = bool;
         default = config.vim.languages.enableDAP;
+        defaultText = literalExpression "config.vim.languages.enableDAP";
+        description = "Enable Python Debug Adapter";
       };
 
       debugger = mkOption {
-        description = "Python debugger to use";
         type = enum (attrNames debuggers);
         default = defaultDebugger;
+        description = "Python debugger to use";
       };
 
       package = mkOption {
@@ -225,6 +192,20 @@ in {
         '';
       };
     };
+
+    extraDiagnostics = {
+      enable =
+        mkEnableOption "extra Python diagnostics"
+        // {
+          default = config.vim.languages.enableExtraDiagnostics;
+          defaultText = literalExpression "config.vim.languages.enableExtraDiagnostics";
+        };
+      types = diagnostics {
+        langDesc = "Python";
+        inherit diagnosticsProviders;
+        inherit defaultDiagnosticsProvider;
+      };
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -234,32 +215,59 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.python-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["python"];
+          root_markers = [
+            "Pipfile"
+            "pyproject.toml"
+            "requirements.txt"
+            "setup.cfg"
+            "setup.py"
+          ];
+        });
+      };
     })
 
     (mkIf cfg.format.enable {
-      vim.formatter.conform-nvim = {
+      vim.formatter.conform-nvim = let
+        names = flatten (map (type:
+          if type == "black-and-isort"
+          then
+            warn ''
+              vim.languages.python.format.type: "black-and-isort" is deprecated,
+              use `["black" "isort"]` instead.
+            '' ["black" "isort"]
+          else type)
+        cfg.format.type);
+      in {
         enable = true;
-        # HACK: I'm planning to remove these soon so I just took the easiest way out
-        setupOpts.formatters_by_ft.python =
-          if cfg.format.type == "black-and-isort"
-          then ["black"]
-          else [cfg.format.type];
-        setupOpts.formatters =
-          if (cfg.format.type == "black-and-isort")
-          then {
-            black.command = "${cfg.format.package}/bin/black";
-          }
-          else {
-            ${cfg.format.type}.command = getExe cfg.format.package;
-          };
+        setupOpts = {
+          formatters_by_ft.python = names;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            names;
+        };
       };
     })
 
     (mkIf cfg.dap.enable {
       vim.debugger.nvim-dap.enable = true;
       vim.debugger.nvim-dap.sources.python-debugger = debuggers.${cfg.dap.debugger}.dapConfig;
+    })
+
+    (mkIf cfg.extraDiagnostics.enable {
+      vim.diagnostics.nvim-lint = {
+        enable = true;
+        linters_by_ft.python = cfg.extraDiagnostics.types;
+        linters =
+          mkMerge (map (name: {${name} = diagnosticsProviders.${name}.config;})
+            cfg.extraDiagnostics.types);
+      };
     })
   ]);
 }

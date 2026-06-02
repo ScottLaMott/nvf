@@ -1,20 +1,16 @@
 {
   config,
-  pkgs,
   lib,
+  pkgs,
   ...
 }: let
-  inherit (lib.modules) mkIf mkMerge;
+  inherit (lib) mkIf foldl' mapAttrsToList;
+  inherit (lib.strings) optionalString;
   inherit (lib.lists) optionals;
-  inherit (lib.nvim.binds) mkSetBinding addDescriptionsToMappings;
+  inherit (lib.nvim.dag) entryAfter;
   inherit (lib.nvim.lua) toLuaObject;
-  inherit (lib.nvim.dag) entryBefore entryAfter;
 
   cfg = config.vim.treesitter;
-
-  self = import ./treesitter.nix {inherit pkgs lib;};
-  mappingDefinitions = self.options.vim.treesitter.mappings;
-  mappings = addDescriptionsToMappings cfg.mappings mappingDefinitions;
 in {
   config = mkIf cfg.enable {
     vim = {
@@ -28,69 +24,90 @@ in {
 
       treesitter.grammars = optionals cfg.addDefaultGrammars cfg.defaultGrammars;
 
-      maps = {
-        # HACK: Using mkSetLuaBinding and putting the lua code does not work for some reason: It just selects the whole file.
-        # This works though, and if it ain't broke, don't fix it.
-        normal = mkSetBinding mappings.incrementalSelection.init ":lua require('nvim-treesitter.incremental_selection').init_selection()<CR>";
+      pluginRC = {
+        treesitter-autocommands = entryAfter ["basic"] ''
+          vim.api.nvim_create_augroup("nvf_treesitter", { clear = true })
 
-        visualOnly = mkMerge [
-          (mkSetBinding mappings.incrementalSelection.incrementByNode "<cmd>lua require('nvim-treesitter.incremental_selection').node_incremental()<CR>")
-          (mkSetBinding mappings.incrementalSelection.incrementByScope "<cmd>lua require('nvim-treesitter.incremental_selection').scope_incremental()<CR>")
-          (mkSetBinding mappings.incrementalSelection.decrementByNode "<cmd>lua require('nvim-treesitter.incremental_selection').node_decremental()<CR>")
-        ];
+          ${lib.optionalString cfg.highlight.enable ''
+            -- Enable treesitter highlighting for all filetypes
+            vim.api.nvim_create_autocmd("FileType", {
+              group = "nvf_treesitter",
+              pattern = "*",
+              callback = function()
+                pcall(vim.treesitter.start)
+              end,
+            })
+          ''}
+
+          ${lib.optionalString cfg.indent.enable ''
+            -- Enable treesitter highlighting for all filetypes
+            vim.api.nvim_create_autocmd("FileType", {
+              group = "nvf_treesitter",
+              pattern = ${toLuaObject cfg.indent.pattern},
+              callback = function(args)
+            ${optionalString (builtins.length cfg.indent.excludes > 0) ''
+              local ft = vim.bo[args.buf].filetype
+              if vim.tbl_contains(${toLuaObject cfg.indent.excludes}, ft) then
+                return
+              end
+            ''}
+                vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+              end,
+            })
+          ''}
+
+          ${lib.optionalString cfg.fold ''
+            -- Enable treesitter folding for all filetypes
+            vim.api.nvim_create_autocmd("FileType", {
+              group = "nvf_treesitter",
+              pattern = "*",
+              callback = function()
+                vim.wo[0][0].foldmethod = "expr"
+                vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+              end,
+            })
+          ''}
+        '';
+        treesitter-filetype-mappings = entryAfter ["basic"] ''
+          for lang, ft in pairs(${toLuaObject cfg.filetypeMappings}) do
+            vim.treesitter.language.register(lang, ft)
+          end
+        '';
       };
 
-      # For some reason treesitter highlighting does not work on start if this is set before syntax on
-      pluginRC.treesitter-fold = mkIf cfg.fold (entryBefore ["basic"] ''
-        -- This is required by treesitter-context to handle folds
-        vim.o.foldmethod = "expr"
-        vim.o.foldexpr = "nvim_treesitter#foldexpr()"
+      additionalRuntimePaths = mkIf (cfg.queries != []) [
+        (let
+          grouped =
+            foldl'
+            (
+              acc: entry:
+                foldl'
+                (
+                  inner: filetype: let
+                    path = "queries/${filetype}/${entry.type}.scm";
+                    prev = inner.${path} or "";
+                  in
+                    inner
+                    // {
+                      ${path} = prev + entry.query;
+                    }
+                )
+                acc
+                entry.filetypes
+            )
+            {}
+            cfg.queries;
 
-        -- This is optional, but is set rather as a sane default.
-        -- If unset, opened files will be folded by automatically as
-        -- the files are opened
-        vim.o.foldenable = false
-      '');
-
-      pluginRC.treesitter = entryAfter ["basic"] ''
-        require('nvim-treesitter.configs').setup {
-          -- Disable imperative treesitter options that would attempt to fetch
-          -- grammars into the read-only Nix store. To add additional grammars here
-          -- you must use the `config.vim.treesitter.grammars` option.
-          auto_install = false,
-          sync_install = false,
-          ensure_installed = {},
-
-          -- Indentation module for Treesitter
-          indent = {
-            enable = ${toLuaObject cfg.indent.enable},
-            disable = ${toLuaObject cfg.indent.disable},
-          },
-
-          -- Highlight module for Treesitter
-          highlight = {
-            enable = ${toLuaObject cfg.highlight.enable},
-            disable = ${toLuaObject cfg.highlight.disable},
-            additional_vim_regex_highlighting = ${toLuaObject cfg.highlight.additionalVimRegexHighlighting},
-          },
-
-          -- Indentation module for Treesitter
-          -- Keymaps are set to false here as they are
-          -- handled by `vim.maps` entries calling lua
-          -- functions achieving the same functionality.
-          incremental_selection = {
-            enable = ${toLuaObject cfg.incrementalSelection.enable},
-            disable = ${toLuaObject cfg.incrementalSelection.disable},
-            keymaps = {
-              init_selection = false,
-              node_incremental = false,
-              scope_incremental = false,
-              node_decremental = false,
-
-            },
-          },
-        }
-      '';
+          files =
+            mapAttrsToList
+            (path: query: {
+              name = path;
+              path = pkgs.writeText path query;
+            })
+            grouped;
+        in
+          pkgs.linkFarm "treesitter-queries" files)
+      ];
     };
   };
 }

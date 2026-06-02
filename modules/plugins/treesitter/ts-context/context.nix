@@ -1,6 +1,6 @@
 {lib, ...}: let
   inherit (lib.options) mkOption mkEnableOption;
-  inherit (lib.types) int bool str nullOr enum;
+  inherit (lib.types) int bool str nullOr enum either;
   inherit (lib.nvim.types) mkPluginSetupOption;
   inherit (lib.nvim.config) batchRenameOptions;
   migrationTable = {
@@ -26,12 +26,14 @@ in {
 
     setupOpts = mkPluginSetupOption "treesitter-context" {
       max_lines = mkOption {
-        type = int;
+        type = either int str;
         default = 0;
         description = ''
           How many lines the window should span.
 
-          Values >= 0 mean there will be no limit.
+          Can be an absolute line number (given as int) or a percentage (given as string, e.g. "20%").
+
+          Values <= 0 mean there will be no limit.
         '';
       };
 
@@ -62,7 +64,7 @@ in {
         default = "outer";
         description = ''
           Which context lines to discard if
-          [](#opt-vim.treesitter.context.setupOpts.max_lines) is exceeded.
+          {option}`vim.treesitter.context.setupOpts.max_lines` is exceeded.
         '';
       };
 

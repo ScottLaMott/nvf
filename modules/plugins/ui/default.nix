@@ -3,6 +3,7 @@
     ./borders
     ./breadcrumbs
     ./colorful-menu-nvim
+    ./nvim-highlight-colors
     ./colorizer
     ./fastaction
     ./illuminate
@@ -11,5 +12,6 @@
     ./notifications
     ./nvim-ufo
     ./smartcolumn
+    ./ui2
   ];
 }

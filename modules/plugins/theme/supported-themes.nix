@@ -37,6 +37,29 @@ in {
     '';
     styles = ["dark" "darker" "cool" "deep" "warm" "warmer"];
   };
+  gruber-darker = {
+    setup = _: ''
+      require('gruber-darker').setup({
+        -- defaults
+        bold = true,
+        invert = {
+          signs = false,
+          tabline = false,
+          visual = false,
+        },
+        italic = {
+          strings = true,
+          comments = true,
+          operators = false,
+          folds = true,
+        },
+        undercurl = true,
+        underline = true,
+      })
+      vim.cmd('colorscheme gruber-darker')
+    '';
+    styles = ["dark"];
+  };
 
   tokyonight = {
     setup = {
@@ -46,6 +69,18 @@ in {
     }: ''
       require('tokyonight').setup {
         transparent = ${boolToString transparent};
+        styles = {
+          sidebars = ${
+        if transparent
+        then ''"transparent"''
+        else ''"dark"''
+      },
+          floats = ${
+        if transparent
+        then ''"transparent"''
+        else ''"dark"''
+      },
+        },
       }
       vim.cmd[[colorscheme tokyonight-${style}]]
     '';
@@ -71,6 +106,9 @@ in {
       require('catppuccin').setup {
         flavour = "${style}",
         transparent_background = ${boolToString transparent},
+        float = {
+          transparent = ${boolToString transparent},
+        },
         term_colors = true,
         integrations = {
           nvimtree = {
@@ -299,5 +337,14 @@ in {
     '';
 
     styles = ["hard" "medium" "soft"];
+  };
+
+  mellow = {
+    setup = {transparent ? false, ...}: ''
+      -- Mellow configuration
+      vim.g.mellow_transparent = ${boolToString transparent}
+
+      vim.cmd.colorscheme("mellow")
+    '';
   };
 }

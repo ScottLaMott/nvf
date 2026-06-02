@@ -8,35 +8,20 @@
   inherit (lib.options) mkOption mkEnableOption literalExpression;
   inherit (lib.meta) getExe;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either package listOf str bool;
-  inherit (lib.nvim.types) diagnostics mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib.types) enum bool listOf;
+  inherit (lib) genAttrs;
+  inherit (lib.nvim.types) diagnostics mkGrammarOption deprecatedSingleOrListOf enumWithRename;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.bash;
 
-  defaultServer = "bash-ls";
-  servers = {
-    bash-ls = {
-      package = pkgs.bash-language-server;
-      lspConfig = ''
-        lspconfig.bashls.setup{
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/bash-language-server",  "start"}''
-        };
-        }
-      '';
-    };
-  };
+  defaultServers = ["bash-language-server"];
+  servers = ["bash-language-server"];
 
-  defaultFormat = "shfmt";
+  defaultFormat = ["shfmt"];
   formats = {
     shfmt = {
-      package = pkgs.shfmt;
+      command = getExe pkgs.shfmt;
     };
   };
 
@@ -51,48 +36,55 @@ in {
     enable = mkEnableOption "Bash language support";
 
     treesitter = {
-      enable = mkEnableOption "Bash treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Bash treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "bash";
     };
 
     lsp = {
-      enable = mkEnableOption "Enable Bash LSP support" // {default = config.vim.lsp.enable;};
-
-      server = mkOption {
+      enable =
+        mkEnableOption "Bash LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enumWithRename
+          "vim.languages.bash.lsp.servers"
+          servers
+          {
+            bash-ls = "bash-language-server";
+          });
+        default = defaultServers;
         description = "Bash LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "bash-language-server package, or the command to run as a list of strings";
-        example = literalExpression ''[lib.getExe pkgs.bash-language-server "start"]'';
-        type = either package (listOf str);
-        default = pkgs.bash-language-server;
       };
     };
 
     format = {
       enable = mkOption {
-        description = "Enable Bash formatting";
         type = bool;
         default = config.vim.languages.enableFormat;
+        defaultText = literalExpression "config.vim.languages.enableFormat";
+        description = "Enable Bash formatting";
       };
       type = mkOption {
-        description = "Bash formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.bash.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Bash formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
+        description = "Bash formatter to use";
       };
     };
 
     extraDiagnostics = {
-      enable = mkEnableOption "extra Bash diagnostics" // {default = config.vim.languages.enableExtraDiagnostics;};
+      enable =
+        mkEnableOption "extra Bash diagnostics"
+        // {
+          default = config.vim.languages.enableExtraDiagnostics;
+          defaultText = literalExpression "config.vim.languages.enableExtraDiagnostics";
+        };
       types = diagnostics {
         langDesc = "Bash";
         inherit diagnosticsProviders;
@@ -103,21 +95,34 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.treesitter.enable {
-      vim.treesitter.enable = true;
-      vim.treesitter.grammars = [cfg.treesitter.package];
+      vim.treesitter = {
+        enable = true;
+        grammars = [cfg.treesitter.package];
+        # not perfect mappings, but better than none
+        filetypeMappings.bash = ["ash" "dash" "zsh"];
+      };
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.bash-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["bash" "sh" "ash" "dash" "zsh"];
+        });
+      };
     })
 
     (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.sh = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} = {
-          command = getExe cfg.format.package;
+        setupOpts = {
+          formatters_by_ft.sh = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
         };
       };
     })

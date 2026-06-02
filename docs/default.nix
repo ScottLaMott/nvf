@@ -92,7 +92,7 @@
 
   # Generate the HTML manual pages
   html = pkgs.callPackage ./manual.nix {
-    inherit release;
+    inherit inputs;
     inherit (nvimModuleDocs) optionsJSON;
   };
 in {

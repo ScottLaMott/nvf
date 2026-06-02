@@ -5,42 +5,23 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either listOf package str;
-  inherit (lib.nvim.types) mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib) genAttrs;
+  inherit (lib.types) enum listOf;
+  inherit (lib.nvim.types) mkGrammarOption deprecatedSingleOrListOf enumWithRename;
   inherit (lib.nvim.dag) entryAnywhere;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.elixir;
 
-  defaultServer = "elixirls";
-  servers = {
-    elixirls = {
-      package = pkgs.elixir-ls;
-      lspConfig = ''
-        -- elixirls setup
-        lspconfig.elixirls.setup {
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/elixir-ls"}''
-        }
-        }
-      '';
-    };
-  };
+  defaultServers = ["elixir-ls"];
+  servers = ["elixir-ls"];
 
-  defaultFormat = "mix";
+  defaultFormat = ["mix"];
   formats = {
     mix = {
-      package = pkgs.elixir;
-      config = {
-        command = "${cfg.format.package}/bin/mix";
-      };
+      command = "${pkgs.elixir}/bin/mix";
     };
   };
 in {
@@ -48,24 +29,33 @@ in {
     enable = mkEnableOption "Elixir language support";
 
     treesitter = {
-      enable = mkEnableOption "Elixir treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Elixir treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "elixir";
+      heexPackage = mkGrammarOption pkgs "heex";
+      eexPackage = mkGrammarOption pkgs "eex";
     };
 
     lsp = {
-      enable = mkEnableOption "Elixir LSP support" // {default = config.vim.lsp.enable;};
-
-      server = mkOption {
+      enable =
+        mkEnableOption "Elixir LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enumWithRename
+          "vim.languages.elixir.lsp.servers"
+          servers
+          {
+            elixirls = "elixir-ls";
+          });
+        default = defaultServers;
         description = "Elixir LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "Elixir LSP server package, or the command to run as a list of strings";
-        example = ''[lib.getExe pkgs.jdt-language-server " - data " " ~/.cache/jdtls/workspace "]'';
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
       };
     };
 
@@ -73,15 +63,9 @@ in {
       enable = mkEnableOption "Elixir formatting" // {default = config.vim.languages.enableFormat;};
 
       type = mkOption {
-        description = "Elixir formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.elixir.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Elixir formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
+        description = "Elixir formatter to use";
       };
     };
 
@@ -93,20 +77,34 @@ in {
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.treesitter.enable {
       vim.treesitter.enable = true;
-      vim.treesitter.grammars = [cfg.treesitter.package];
+      vim.treesitter.grammars = [
+        cfg.treesitter.package
+        cfg.treesitter.heexPackage
+        cfg.treesitter.eexPackage
+      ];
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.elixir-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["elixir" "eelixir" "heex" "surface"];
+        });
+      };
     })
 
     (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.elixir = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} =
-          formats.${cfg.format.type}.config;
+        setupOpts = {
+          formatters_by_ft.elixir = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
+        };
       };
     })
 

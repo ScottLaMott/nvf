@@ -4,24 +4,24 @@
   lib,
   ...
 }: let
-  inherit (builtins) attrNames;
   inherit (lib.meta) getExe;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.options) mkOption mkEnableOption literalMD;
+  inherit (lib.options) mkOption mkEnableOption literalMD literalExpression;
   inherit (lib.strings) optionalString;
-  inherit (lib.trivial) boolToString;
   inherit (lib.lists) isList;
-  inherit (lib.types) bool package str listOf either enum;
-  inherit (lib.nvim.types) mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib.attrsets) attrNames;
+  inherit (lib.types) bool package str listOf either enum int;
+  inherit (lib.nvim.lua) toLuaObject;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
+  inherit (lib.nvim.types) mkGrammarOption mkPluginSetupOption deprecatedSingleOrListOf;
   inherit (lib.nvim.dag) entryAfter entryAnywhere;
 
   cfg = config.vim.languages.rust;
 
-  defaultFormat = "rustfmt";
+  defaultFormat = ["rustfmt"];
   formats = {
     rustfmt = {
-      package = pkgs.rustfmt;
+      command = getExe pkgs.rustfmt;
     };
   };
 in {
@@ -29,21 +29,22 @@ in {
     enable = mkEnableOption "Rust language support";
 
     treesitter = {
-      enable = mkEnableOption "Rust treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Rust treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "rust";
     };
 
-    crates = {
-      enable = mkEnableOption "crates-nvim, tools for managing dependencies";
-      codeActions = mkOption {
-        description = "Enable code actions through null-ls";
-        type = bool;
-        default = true;
-      };
-    };
-
     lsp = {
-      enable = mkEnableOption "Rust LSP support (rust-analyzer with extra tools)" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "Rust LSP support (rust-analyzer with extra tools)"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
       package = mkOption {
         description = "rust-analyzer package, or the command to run as a list of strings";
         example = ''[lib.getExe pkgs.jdt-language-server "-data" "~/.cache/jdtls/workspace"]'';
@@ -79,14 +80,8 @@ in {
 
       type = mkOption {
         description = "Rust formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.rust.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Rust formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
       };
     };
 
@@ -95,6 +90,7 @@ in {
         description = "Rust Debug Adapter support";
         type = bool;
         default = config.vim.languages.enableDAP;
+        defaultText = literalExpression "config.vim.languages.enableDAP";
       };
 
       package = mkOption {
@@ -102,26 +98,78 @@ in {
         type = package;
         default = pkgs.lldb;
       };
+
+      adapter = mkOption {
+        type = enum ["lldb-dap" "codelldb"];
+        default = "codelldb";
+        description = ''
+          Select which LLDB-based debug adapter to use:
+
+          - "codelldb": use the CodeLLDB adapter from the vadimcn.vscode-lldb extension.
+          - "lldb-dap": use the LLDB DAP implementation shipped with LLVM (lldb-dap).
+
+          The default "codelldb" backend generally provides a better debugging experience for Rust.
+        '';
+      };
+    };
+
+    extensions = {
+      crates-nvim = {
+        enable = mkEnableOption "crates.io dependency management [crates-nvim]";
+
+        setupOpts = mkPluginSetupOption "crates-nvim" {
+          lsp = {
+            enabled =
+              mkEnableOption "crates.nvim's in-process language server"
+              // {
+                default = cfg.extensions.crates-nvim.enable;
+                defaultText = literalExpression "config.vim.languages.rust.extensions.crates-nvim.enable";
+              };
+            actions =
+              mkEnableOption "actions for crates-nvim's in-process language server"
+              // {
+                default = cfg.extensions.crates-nvim.enable;
+                defaultText = literalExpression "config.vim.languages.rust.extensions.crates-nvim.enable";
+              };
+            completion =
+              mkEnableOption "completion for crates-nvim's in-process language server"
+              // {
+                default = cfg.extensions.crates-nvim.enable;
+                defaultText = literalExpression "config.vim.languages.rust.extensions.crates-nvim.enable";
+              };
+            hover =
+              mkEnableOption "hover actions for crates-nvim's in-process language server"
+              // {
+                default = cfg.extensions.crates-nvim.enable;
+                defaultText = literalExpression "config.vim.languages.rust.extensions.crates-nvim.enable";
+              };
+          };
+          completion = {
+            crates = {
+              enabled =
+                mkEnableOption "completion for crates-nvim's in-process language server"
+                // {
+                  default = cfg.extensions.crates-nvim.enable;
+                  defaultText = literalExpression "config.vim.languages.rust.extensions.crates-nvim.enable";
+                };
+              max_results = mkOption {
+                description = "The maximum number of search results to display";
+                type = int;
+                default = 8;
+              };
+              min_chars = mkOption {
+                description = "The minimum number of characters to type before completions begin appearing";
+                type = int;
+                default = 3;
+              };
+            };
+          };
+        };
+      };
     };
   };
 
   config = mkIf cfg.enable (mkMerge [
-    (mkIf cfg.crates.enable {
-      vim = {
-        startPlugins = ["crates-nvim"];
-        lsp.null-ls.enable = mkIf cfg.crates.codeActions true;
-        autocomplete.nvim-cmp.sources = {crates = "[Crates]";};
-        pluginRC.rust-crates = entryAnywhere ''
-          require('crates').setup {
-            null_ls = {
-              enabled = ${boolToString cfg.crates.codeActions},
-              name = "crates.nvim",
-            }
-          }
-        '';
-      };
-    })
-
     (mkIf cfg.treesitter.enable {
       vim.treesitter.enable = true;
       vim.treesitter.grammars = [cfg.treesitter.package];
@@ -130,9 +178,14 @@ in {
     (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.rust = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} = {
-          command = getExe cfg.format.package;
+        setupOpts = {
+          formatters_by_ft.rust = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
         };
       };
     })
@@ -140,7 +193,6 @@ in {
     (mkIf (cfg.lsp.enable || cfg.dap.enable) {
       vim = {
         startPlugins = ["rustaceanvim"];
-
         pluginRC.rustaceanvim = entryAfter ["lsp-setup"] ''
           vim.g.rustaceanvim = {
           ${optionalString cfg.lsp.enable ''
@@ -153,7 +205,7 @@ in {
             server = {
               cmd = ${
               if isList cfg.lsp.package
-              then expToLua cfg.lsp.package
+              then toLuaObject cfg.lsp.package
               else ''{"${cfg.lsp.package}/bin/rust-analyzer"}''
             },
               default_settings = {
@@ -162,24 +214,31 @@ in {
               on_attach = function(client, bufnr)
                 default_on_attach(client, bufnr)
                 local opts = { noremap=true, silent=true, buffer = bufnr }
-                vim.keymap.set("n", "<localleader>rr", ":RustLsp runnables<CR>", opts)
-                vim.keymap.set("n", "<localleader>rp", ":RustLsp parentModule<CR>", opts)
-                vim.keymap.set("n", "<localleader>rm", ":RustLsp expandMacro<CR>", opts)
-                vim.keymap.set("n", "<localleader>rc", ":RustLsp openCargo", opts)
-                vim.keymap.set("n", "<localleader>rg", ":RustLsp crateGraph x11", opts)
-                ${optionalString cfg.dap.enable ''
+
+                ${optionalString config.vim.vendoredKeymaps.enable ''
+              vim.keymap.set("n", "<localleader>rr", ":RustLsp runnables<CR>", opts)
+              vim.keymap.set("n", "<localleader>rp", ":RustLsp parentModule<CR>", opts)
+              vim.keymap.set("n", "<localleader>rm", ":RustLsp expandMacro<CR>", opts)
+              vim.keymap.set("n", "<localleader>rc", ":RustLsp openCargo", opts)
+              vim.keymap.set("n", "<localleader>rg", ":RustLsp crateGraph x11", opts)
+            ''}
+
+                ${optionalString (cfg.dap.enable && config.vim.vendoredKeymaps.enable) ''
               vim.keymap.set("n", "<localleader>rd", ":RustLsp debuggables<cr>", opts)
+            ''}
+
+                ${optionalString (cfg.dap.enable && config.vim.debugger.nvim-dap.mappings.continue != null) ''
               vim.keymap.set(
-               "n", "${config.vim.debugger.nvim-dap.mappings.continue}",
-               function()
-                 local dap = require("dap")
-                 if dap.status() == "" then
-                   vim.cmd "RustLsp debuggables"
-                 else
-                   dap.continue()
-                 end
-               end,
-               opts
+              "n", "${config.vim.debugger.nvim-dap.mappings.continue}",
+              function()
+                local dap = require("dap")
+                if dap.status() == "" then
+                  vim.cmd "RustLsp debuggables"
+                else
+                  dap.continue()
+                end
+              end,
+              opts
               )
             ''}
               end
@@ -188,16 +247,43 @@ in {
 
             ${optionalString cfg.dap.enable ''
             dap = {
-              adapter = {
-                type = "executable",
-                command = "${cfg.dap.package}/bin/lldb-dap",
-                name = "rustacean_lldb",
-              },
+              adapter = ${
+              if cfg.dap.adapter == "lldb-dap"
+              then ''
+                {
+                  type = "executable",
+                  command = "${cfg.dap.package}/bin/lldb-dap",
+                  name = "rustacean_lldb",
+                }''
+              else let
+                codelldb = pkgs.vscode-extensions.vadimcn.vscode-lldb.adapter;
+                codelldbPath = "${codelldb}/bin/codelldb";
+                liblldbPath = "${codelldb}/share/lldb/lib/liblldb.so";
+              in ''require("rustaceanvim.config").get_codelldb_adapter("${codelldbPath}", "${liblldbPath}")''
+            },
             },
           ''}
           }
         '';
       };
+    })
+
+    (mkIf cfg.extensions.crates-nvim.enable {
+      vim = mkMerge [
+        {
+          lazy.plugins.crates-nvim = {
+            package = "crates-nvim";
+            setupModule = "crates";
+            setupOpts = cfg.extensions.crates-nvim.setupOpts;
+            event = [
+              {
+                event = "BufRead";
+                pattern = "Cargo.toml";
+              }
+            ];
+          };
+        }
+      ];
     })
   ]);
 }

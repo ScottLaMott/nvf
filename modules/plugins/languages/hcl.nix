@@ -5,32 +5,28 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
+  inherit (lib) genAttrs;
   inherit (lib.meta) getExe;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.types) package bool enum;
-  inherit (lib.nvim.types) mkGrammarOption;
+  inherit (lib.types) enum listOf;
+  inherit (lib.nvim.types) mkGrammarOption enumWithRename;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.hcl;
 
-  defaultServer = "terraform-ls";
-  servers = {
-    terraform-ls = {
-      package = pkgs.terraform-ls;
-      lspConfig = ''
-        lspconfig.terraformls.setup {
-          capabilities = capabilities,
-          on_attach=default_on_attach,
-          cmd = {"${lib.getExe cfg.lsp.package}", "serve"},
-        }
-      '';
-    };
-  };
+  defaultServers = ["tofu-ls"];
+  servers = ["terraform-ls" "tofu-ls" "docker-language-server"];
 
-  defaultFormat = "hclfmt";
+  defaultFormat = ["hclfmt"];
   formats = {
     hclfmt = {
-      package = pkgs.hclfmt;
+      command = getExe pkgs.hclfmt;
+    };
+    nomad-fmt = {
+      command = getExe pkgs.nomad;
+      args = ["fmt" "$FILENAME"];
+      stdin = false;
     };
   };
 in {
@@ -38,35 +34,46 @@ in {
     enable = mkEnableOption "HCL support";
 
     treesitter = {
-      enable = mkEnableOption "HCL treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "HCL treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "hcl";
     };
 
     lsp = {
-      enable = mkEnableOption "HCL LSP support (terraform-ls)" // {default = config.vim.lsp.enable;};
-      # TODO: (maybe, is it better?) it would be cooler to use vscode-extensions.hashicorp.hcl probably, shouldn't be too hard
-      package = mkOption {
-        type = package;
-        default = servers.${defaultServer}.package;
-        description = "HCL language server package (terraform-ls)";
+      enable =
+        mkEnableOption "HCL LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enumWithRename
+          "vim.languages.hcl.lsp.servers"
+          servers
+          {
+            terraformls-hcl = "terraform-ls";
+            tofuls-hcl = "tofu-ls";
+          });
+        default = defaultServers;
+        description = "HCL LSP server to use";
       };
     };
 
     format = {
-      enable = mkOption {
-        type = bool;
-        default = config.vim.languages.enableFormat;
-        description = "Enable HCL formatting";
-      };
+      enable =
+        mkEnableOption "HCL formatting"
+        // {
+          default = config.vim.languages.enableFormat;
+          defaultText = literalExpression "config.vim.languages.enableFormat";
+        };
       type = mkOption {
-        type = enum (attrNames formats);
+        type = listOf (enum (attrNames formats));
         default = defaultFormat;
         description = "HCL formatter to use";
-      };
-      package = mkOption {
-        type = package;
-        default = formats.${cfg.format.type}.package;
-        description = "HCL formatter package";
       };
     };
   };
@@ -85,29 +92,42 @@ in {
           end
         })
 
-        local ft = require('Comment.ft')
-        ft
-          .set('hcl', '#%s')
+         ${
+          if config.vim.comments.comment-nvim.enable
+          then ''
+            local ft = require('Comment.ft')
+            ft.set('hcl', '#%s')
+          ''
+          else ""
+        }
       '';
     }
+
     (mkIf cfg.treesitter.enable {
       vim.treesitter.enable = true;
       vim.treesitter.grammars = [cfg.treesitter.package];
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources = lib.optionalAttrs (! config.vim.languages.terraform.lsp.enable) {
-        terraform-ls = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["hcl"];
+        });
       };
     })
 
     (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.hcl = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} = {
-          command = getExe cfg.format.package;
+        setupOpts = {
+          formatters_by_ft.hcl = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
         };
       };
     })

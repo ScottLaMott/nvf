@@ -5,33 +5,16 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge mkDefault;
-  inherit (lib.lists) isList;
-  inherit (lib.types) bool either listOf package str enum;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib) genAttrs;
+  inherit (lib.types) bool package enum listOf;
   inherit (lib.nvim.types) mkGrammarOption;
 
   cfg = config.vim.languages.zig;
 
-  defaultServer = "zls";
-  servers = {
-    zls = {
-      package = pkgs.zls;
-      internalFormatter = true;
-      lspConfig = ''
-        lspconfig.zls.setup {
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else "{'${cfg.lsp.package}/bin/zls'}"
-        }
-        }
-      '';
-    };
-  };
+  defaultServers = ["zls"];
+  servers = ["zls"];
 
   # TODO: dap.adapter.lldb is duplicated when enabling the
   # vim.languages.clang.dap module. This does not cause
@@ -67,23 +50,27 @@ in {
     enable = mkEnableOption "Zig language support";
 
     treesitter = {
-      enable = mkEnableOption "Zig treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Zig treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "zig";
     };
 
     lsp = {
-      enable = mkEnableOption "Zig LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "Zig LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      server = mkOption {
-        type = enum (attrNames servers);
-        default = defaultServer;
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "Zig LSP server to use";
-      };
-
-      package = mkOption {
-        description = "ZLS package, or the command to run as a list of strings";
-        type = either package (listOf str);
-        default = pkgs.zls;
       };
     };
 
@@ -91,6 +78,7 @@ in {
       enable = mkOption {
         type = bool;
         default = config.vim.languages.enableDAP;
+        defaultText = literalExpression "config.vim.languages.enableDAP";
         description = "Enable Zig Debug Adapter";
       };
 
@@ -118,11 +106,13 @@ in {
 
     (mkIf cfg.lsp.enable {
       vim = {
-        lsp.lspconfig = {
-          enable = true;
-          sources.zig-lsp = servers.${cfg.lsp.server}.lspConfig;
+        lsp = {
+          presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+          servers = genAttrs cfg.lsp.servers (_: {
+            root_markers = ["build.zig"];
+            filetypes = ["zig" "zir"];
+          });
         };
-
         # nvf handles autosaving already
         globals.zig_fmt_autosave = mkDefault 0;
       };

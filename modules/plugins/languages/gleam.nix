@@ -4,55 +4,41 @@
   lib,
   ...
 }: let
-  inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either listOf package str;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib) genAttrs;
+  inherit (lib.types) enum listOf;
   inherit (lib.nvim.types) mkGrammarOption;
 
   cfg = config.vim.languages.gleam;
 
-  defaultServer = "gleam";
-  servers = {
-    gleam = {
-      package = pkgs.gleam;
-      lspConfig = ''
-        lspconfig.gleam.setup{
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/gleam", "lsp"}''
-        }
-        }
-      '';
-    };
-  };
+  defaultServers = ["gleam"];
+  servers = ["gleam"];
 in {
   options.vim.languages.gleam = {
     enable = mkEnableOption "Gleam language support";
 
     treesitter = {
-      enable = mkEnableOption "Gleam treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Gleam treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "gleam";
     };
 
     lsp = {
-      enable = mkEnableOption "Gleam LSP support" // {default = config.vim.lsp.enable;};
-
-      server = mkOption {
-        type = enum (attrNames servers);
-        default = defaultServer;
+      enable =
+        mkEnableOption "Gleam LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "Gleam LSP server to use";
-      };
-
-      package = mkOption {
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
-        description = "Gleam LSP server package, or the command to run as a list of strings";
       };
     };
   };
@@ -64,8 +50,12 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.gleam-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["gleam"];
+        });
+      };
     })
   ]);
 }

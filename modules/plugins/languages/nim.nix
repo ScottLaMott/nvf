@@ -5,42 +5,22 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either listOf package str;
-  inherit (lib.nvim.types) mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib.types) enum listOf;
+  inherit (lib) genAttrs;
+  inherit (lib.nvim.types) mkGrammarOption deprecatedSingleOrListOf;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.nim;
 
-  defaultServer = "nimlsp";
-  servers = {
-    nimlsp = {
-      package = pkgs.nimlsp;
-      lspConfig = ''
-        lspconfig.nimls.setup{
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''
-            {"${cfg.lsp.package}/bin/nimlsp"}
-          ''
-        };
-        }
-      '';
-    };
-  };
+  defaultServers = ["nimlsp"];
+  servers = ["nimlsp"];
 
-  defaultFormat = "nimpretty";
+  defaultFormat = ["nimpretty"];
   formats = {
     nimpretty = {
-      package = pkgs.nim;
-      config = {
-        command = "${cfg.format.package}/bin/nimpretty";
-      };
+      command = "${pkgs.nim}/bin/nimpretty";
     };
   };
 in {
@@ -48,38 +28,41 @@ in {
     enable = mkEnableOption "Nim language support";
 
     treesitter = {
-      enable = mkEnableOption "Nim treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Nim treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "nim";
     };
 
     lsp = {
-      enable = mkEnableOption "Nim LSP support" // {default = config.vim.lsp.enable;};
-      server = mkOption {
-        description = "Nim LSP server to use";
-        type = str;
-        default = defaultServer;
-      };
+      enable =
+        mkEnableOption "Nim LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      package = mkOption {
-        description = "Nim LSP server package, or the command to run as a list of strings";
-        example = ''[lib.getExe pkgs.nimlsp]'';
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
+        description = "Nim LSP server to use";
       };
     };
 
     format = {
-      enable = mkEnableOption "Nim formatting" // {default = config.vim.languages.enableFormat;};
+      enable =
+        mkEnableOption "Nim formatting"
+        // {
+          default = config.vim.languages.enableFormat;
+          defaultText = literalExpression "config.vim.languages.enableFormat";
+        };
       type = mkOption {
-        description = "Nim formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.nim.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Nim formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
+        description = "Nim formatter to use";
       };
     };
   };
@@ -100,15 +83,26 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.nim-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["nim"];
+        });
+      };
     })
 
     (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.nim = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} = formats.${cfg.format.type}.config;
+        setupOpts = {
+          formatters_by_ft.nim = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
+        };
       };
     })
   ]);

@@ -5,105 +5,27 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib) concatStringsSep;
+  inherit (lib) concatStringsSep genAttrs;
   inherit (lib.meta) getExe;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.strings) optionalString;
-  inherit (lib.types) anything attrsOf enum either listOf nullOr package str;
-  inherit (lib.nvim.types) mkGrammarOption diagnostics;
-  inherit (lib.nvim.lua) expToLua toLuaObject;
+  inherit (lib.types) enum listOf;
+  inherit (lib.nvim.types) mkGrammarOption diagnostics deprecatedSingleOrListOf;
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.nix;
 
-  useFormat = "on_attach = default_on_attach";
-  noFormat = "on_attach = attach_keymaps";
+  defaultServers = ["nil"];
+  servers = ["nil" "nixd"];
 
-  defaultServer = "nil";
-  packageToCmd = package: defaultCmd:
-    if isList package
-    then expToLua package
-    else ''{"${package}/bin/${defaultCmd}"}'';
-  servers = {
-    nil = {
-      package = pkgs.nil;
-      internalFormatter = true;
-      lspConfig = ''
-        lspconfig.nil_ls.setup{
-          capabilities = capabilities,
-        ${
-          if cfg.format.enable
-          then useFormat
-          else noFormat
-        },
-          cmd = ${packageToCmd cfg.lsp.package "nil"},
-        ${optionalString cfg.format.enable ''
-          settings = {
-            ["nil"] = {
-          ${optionalString (cfg.format.type == "alejandra")
-            ''
-              formatting = {
-                command = {"${cfg.format.package}/bin/alejandra", "--quiet"},
-              },
-            ''}
-          ${optionalString (cfg.format.type == "nixfmt")
-            ''
-              formatting = {
-                command = {"${cfg.format.package}/bin/nixfmt"},
-              },
-            ''}
-            },
-          },
-        ''}
-        }
-      '';
-    };
-
-    nixd = {
-      package = pkgs.nixd;
-      internalFormatter = true;
-      lspConfig = ''
-        lspconfig.nixd.setup{
-          capabilities = capabilities,
-        ${
-          if cfg.format.enable
-          then useFormat
-          else noFormat
-        },
-          cmd = ${packageToCmd cfg.lsp.package "nixd"},
-        ${optionalString cfg.format.enable ''
-          settings = {
-            nixd = {
-          ${optionalString (cfg.format.type == "alejandra")
-            ''
-              formatting = {
-                command = {"${cfg.format.package}/bin/alejandra", "--quiet"},
-              },
-            ''}
-          ${optionalString (cfg.format.type == "nixfmt")
-            ''
-              formatting = {
-                command = {"${cfg.format.package}/bin/nixfmt"},
-              },
-            ''}
-          options = ${toLuaObject cfg.lsp.options},
-            },
-          },
-        ''}
-        }
-      '';
-    };
-  };
-
-  defaultFormat = "alejandra";
+  defaultFormat = ["alejandra"];
   formats = {
     alejandra = {
-      package = pkgs.alejandra;
+      command = getExe pkgs.alejandra;
     };
 
     nixfmt = {
-      package = pkgs.nixfmt-rfc-style;
+      command = getExe pkgs.nixfmt;
     };
   };
 
@@ -138,50 +60,51 @@ in {
     enable = mkEnableOption "Nix language support";
 
     treesitter = {
-      enable = mkEnableOption "Nix treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Nix treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "nix";
     };
 
     lsp = {
-      enable = mkEnableOption "Nix LSP support" // {default = config.vim.lsp.enable;};
-      server = mkOption {
+      enable =
+        mkEnableOption "Nix LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "Nix LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "Nix LSP server package, or the command to run as a list of strings";
-        example = ''[lib.getExe pkgs.jdt-language-server "-data" "~/.cache/jdtls/workspace"]'';
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
-      };
-
-      options = mkOption {
-        type = nullOr (attrsOf anything);
-        default = null;
-        description = "Options to pass to nixd LSP server";
       };
     };
 
     format = {
-      enable = mkEnableOption "Nix formatting" // {default = config.vim.languages.enableFormat;};
+      enable =
+        mkEnableOption "Nix formatting"
+        // {
+          default = config.vim.languages.enableFormat;
+          defaultText = literalExpression "config.vim.languages.enableFormat";
+        };
 
       type = mkOption {
         description = "Nix formatter to use";
-        type = enum (attrNames formats);
+        type = deprecatedSingleOrListOf "vim.language.nix.format.type" (enum (attrNames formats));
         default = defaultFormat;
-      };
-
-      package = mkOption {
-        description = "Nix formatter package";
-        type = package;
-        default = formats.${cfg.format.type}.package;
       };
     };
 
     extraDiagnostics = {
-      enable = mkEnableOption "extra Nix diagnostics" // {default = config.vim.languages.enableExtraDiagnostics;};
+      enable =
+        mkEnableOption "extra Nix diagnostics"
+        // {
+          default = config.vim.languages.enableExtraDiagnostics;
+          defaultText = literalExpression "config.vim.languages.enableExtraDiagnostics";
+        };
 
       types = diagnostics {
         langDesc = "Nix";
@@ -201,32 +124,97 @@ in {
             ${concatStringsSep ", " (attrNames formats)}
           '';
         }
-        {
-          assertion = cfg.lsp.server != "rnix";
-          message = ''
-            rnix-lsp has been archived upstream. Please use one of the following available language servers:
-            ${concatStringsSep ", " (attrNames servers)}
-          '';
-        }
       ];
     }
 
     (mkIf cfg.treesitter.enable {
-      vim.treesitter.enable = true;
-      vim.treesitter.grammars = [cfg.treesitter.package];
+      vim.treesitter = {
+        enable = true;
+        grammars = [cfg.treesitter.package];
+        queries = [
+          # query = ''; -> query
+          {
+            type = "injections";
+            filetypes = ["nix"];
+            query = ''
+              ;; extends
+
+              ((binding
+                attrpath: (attrpath
+                  (identifier) @_path)
+                  (#eq? @_path "query")
+                expression: [
+                  (string_expression
+                    ((string_fragment) @injection.content
+                    (#set! injection.language "query")))
+                  (indented_string_expression
+                    ((string_fragment) @injection.content
+                    (#set! injection.language "query")))
+                  (apply_expression
+                    argument: [
+                      (string_expression
+                        ((string_fragment) @injection.content
+                        (#set! injection.language "query")))
+                      (indented_string_expression
+                        ((string_fragment) @injection.content
+                        (#set! injection.language "query")))
+                    ])
+                ]))
+            '';
+          }
+          # mkLuaInline, entryAnywhere, entryBefore, entryAfter -> lua
+          {
+            type = "injections";
+            filetypes = ["nix"];
+            query = ''
+              ;; extends
+
+              ((apply_expression
+                function: (variable_expression
+                  name: (identifier) @_func
+                  (#any-of? @_func "mkLuaInline" "entryAnywhere"))
+                argument: (indented_string_expression
+                  (string_fragment) @injection.content))
+              (#set! injection.language "lua")
+              (#set! injection.combined))
+
+              ((apply_expression
+                function: (apply_expression
+                  function: (variable_expression
+                    name: (identifier) @_func
+                    (#any-of? @_func "entryBefore" "entryAfter"))
+                  argument: (_))
+                argument: (indented_string_expression
+                  (string_fragment) @injection.content))
+              (#set! injection.language "lua")
+              (#set! injection.combined))
+            '';
+          }
+        ];
+      };
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.nix-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["nix"];
+          root_markers = ["flake.nix"];
+        });
+      };
     })
 
-    (mkIf (cfg.format.enable && (!cfg.lsp.enable || !servers.${cfg.lsp.server}.internalFormatter)) {
+    (mkIf cfg.format.enable {
       vim.formatter.conform-nvim = {
         enable = true;
-        setupOpts.formatters_by_ft.nix = [cfg.format.type];
-        setupOpts.formatters.${cfg.format.type} = {
-          command = getExe cfg.format.package;
+        setupOpts = {
+          formatters_by_ft.nix = cfg.format.type;
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
         };
       };
     })

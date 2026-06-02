@@ -9,6 +9,7 @@
     ./harpoon
     ./icon-picker
     ./images
+    ./grug-far-nvim
     ./leetcode-nvim
     ./mkdir
     ./motion
@@ -19,14 +20,16 @@
     ./oil-nvim
     ./outline
     ./preview
+    ./qmk-nvim
     ./sleuth
     ./smart-splits
     ./snacks-nvim
     ./surround
     ./telescope
-    ./wakatime
+    ./vim-wakatime
     ./yanky-nvim
     ./yazi-nvim
     ./undotree
+    ./crazy-coverage
   ];
 }

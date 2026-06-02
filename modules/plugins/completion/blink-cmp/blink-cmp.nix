@@ -1,15 +1,19 @@
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
   inherit (lib.options) mkEnableOption mkOption literalMD;
   inherit (lib.types) bool listOf str either attrsOf submodule enum anything int nullOr;
   inherit (lib.nvim.types) mkPluginSetupOption luaInline pluginType;
-  inherit (lib.nvim.binds) mkMappingOption;
   inherit (lib.nvim.config) mkBool;
+  inherit (config.vim.lib) mkMappingOption;
 
   keymapType = submodule {
     freeformType = attrsOf (listOf (either str luaInline));
     options = {
       preset = mkOption {
-        type = enum ["default" "none" "super-tab" "enter" "cmdline"];
+        type = enum ["inherit" "default" "none" "super-tab" "enter" "cmdline"];
         default = "none";
         description = "keymap presets";
       };

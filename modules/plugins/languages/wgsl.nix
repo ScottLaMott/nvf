@@ -4,57 +4,42 @@
   pkgs,
   ...
 }: let
-  inherit (builtins) attrNames;
-  inherit (lib.lists) isList;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.nvim.lua) expToLua;
   inherit (lib.nvim.types) mkGrammarOption;
-  inherit (lib.options) literalExpression mkEnableOption mkOption;
-  inherit (lib.types) either enum listOf package str;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
+  inherit (lib.types) enum listOf;
+  inherit (lib) genAttrs;
 
   cfg = config.vim.languages.wgsl;
 
-  defaultServer = "wgsl-analyzer";
-  servers = {
-    wgsl-analyzer = {
-      package = pkgs.wgsl-analyzer;
-      internalFormatter = true;
-      lspConfig = ''
-        lspconfig.wgsl_analyzer.setup {
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else "{'${cfg.lsp.package}/bin/wgsl-analyzer'}"
-        }
-        }
-      '';
-    };
-  };
+  defaultServers = ["wgsl-analyzer"];
+  servers = ["wgsl-analyzer"];
 in {
   options.vim.languages.wgsl = {
     enable = mkEnableOption "WGSL language support";
 
     treesitter = {
-      enable = mkEnableOption "WGSL treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "WGSL treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "wgsl";
     };
 
     lsp = {
-      enable = mkEnableOption "WGSL LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "WGSL LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      server = mkOption {
-        type = enum (attrNames servers);
-        default = defaultServer;
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "WGSL LSP server to use";
-      };
-
-      package = mkOption {
-        description = "wgsl-analyzer package, or the command to run as a list of strings";
-        example = literalExpression "[(lib.getExe pkgs.wgsl-analyzer)]";
-        type = either package (listOf str);
-        default = pkgs.wgsl-analyzer;
       };
     };
   };
@@ -68,11 +53,11 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim = {
-        lsp.lspconfig = {
-          enable = true;
-          sources.wgsl_analyzer = servers.${cfg.lsp.server}.lspConfig;
-        };
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["wgsl"];
+        });
       };
     })
   ]);

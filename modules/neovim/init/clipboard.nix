@@ -6,7 +6,7 @@
 }: let
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkOption mkEnableOption mkPackageOption;
-  inherit (lib.types) str submodule;
+  inherit (lib.types) submodule enum;
   inherit (lib.attrsets) mapAttrs mapAttrsToList filterAttrs;
   cfg = config.vim.clipboard;
 in {
@@ -15,12 +15,12 @@ in {
       clipboard = {
         enable = mkEnableOption ''
           clipboard management for Neovim. Users may still choose to manage their
-          clipboard through [](#opt-vim.options) should they wish to avoid using
+          clipboard through {option}`vim.options` should they wish to avoid using
           this module.
         '';
 
         registers = mkOption {
-          type = str;
+          type = enum ["" "unnamedplus" "unnamed" "unnamed,unnamedplus"];
           default = "";
           example = "unnamedplus";
           description = ''

@@ -1,6 +1,11 @@
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
   inherit (lib.options) mkEnableOption;
-  inherit (lib.nvim.binds) mkMappingOption;
+  inherit (lib.nvim.types) mkPluginSetupOption;
+  inherit (config.vim.lib) mkMappingOption;
 in {
   options.vim.minimap.codewindow = {
     enable = mkEnableOption "codewindow plugin for minimap view";
@@ -11,5 +16,7 @@ in {
       toggle = mkMappingOption "Toggle minimap [codewindow]" "<leader>mm";
       toggleFocus = mkMappingOption "Toggle minimap focus [codewindow]" "<leader>mf";
     };
+
+    setupOpts = mkPluginSetupOption "codewindow" {};
   };
 }

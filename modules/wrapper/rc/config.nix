@@ -18,7 +18,7 @@ in {
       mapAttrsToList (name: value: "vim.g.${name} = ${toLuaObject value}") cfg.globals;
 
     optionsScript =
-      mapAttrsToList (name: value: "vim.o.${name} = ${toLuaObject value}") cfg.options;
+      mapAttrsToList (name: value: "vim.opt.${name} = ${toLuaObject value}") cfg.options;
 
     extraPluginConfigs = resolveDag {
       name = "extra plugin configs";
@@ -39,6 +39,7 @@ in {
 
     getOpts = keymap: {
       inherit (keymap) desc silent nowait script expr unique noremap;
+      remap = !keymap.noremap;
     };
 
     toLuaKeymap = bind: "vim.keymap.set(${toLuaObject bind.mode}, ${toLuaObject bind.key}, ${toLuaObject (getAction bind)}, ${toLuaObject (getOpts bind)})";

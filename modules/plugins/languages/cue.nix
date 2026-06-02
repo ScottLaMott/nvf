@@ -4,10 +4,14 @@
   lib,
   ...
 }: let
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption literalExpression mkOption;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.types) package;
   inherit (lib.nvim.types) mkGrammarOption;
+  inherit (lib.types) enum listOf;
+  inherit (lib) genAttrs;
+
+  defaultServers = ["cue"];
+  servers = ["cue"];
 
   cfg = config.vim.languages.cue;
 in {
@@ -15,18 +19,28 @@ in {
     enable = mkEnableOption "CUE language support";
 
     treesitter = {
-      enable = mkEnableOption "CUE treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "CUE treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
 
       package = mkGrammarOption pkgs "cue";
     };
 
     lsp = {
-      enable = mkEnableOption "CUE LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "CUE LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      package = mkOption {
-        type = package;
-        default = pkgs.cue;
-        description = "cue lsp implementation";
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
+        description = "CUE LSP server to use";
       };
     };
   };
@@ -38,14 +52,12 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.cue-lsp = ''
-        lspconfig.cue.setup {
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = {"${cfg.lsp.package}/bin/cue", "lsp"},
-        }
-      '';
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["cue"];
+        });
+      };
     })
   ]);
 }

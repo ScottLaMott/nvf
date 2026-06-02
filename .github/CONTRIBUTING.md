@@ -8,7 +8,7 @@
 
 ## Preface
 
-[LICENSE]: ../LICENSE
+[LICENSE]: /LICENSE
 
 I am glad you are thinking about contributing to nvf! The project is shaped by
 contributors and user feedback, and all contributions are appreciated.
@@ -30,7 +30,7 @@ personally.
 
 ## Contributing Process
 
-[pull request template]: ./PULL_REQUEST_TEMPLATE.md
+[pull request template]: /.github/PULL_REQUEST_TEMPLATE.md
 
 The contribution process is mostly documented in the [pull request template].
 When you create a pull request, you will find a checklist of items to complete
@@ -43,7 +43,7 @@ unsure about any of the items, please ask.
 We provide instructions for a healthy contribution to nvf. This includes
 **styling**, **commit formats**, **how-to guides for common contributions**. You
 are strongly encouraged to read the contributing guidelines in full over at
-[the documentation](https://notashelf.github.io/nvf#hacking).
+[the documentation](https://nvf.notashelf.dev/hacking.html).
 
 A general gist of our requirements is that you must
 

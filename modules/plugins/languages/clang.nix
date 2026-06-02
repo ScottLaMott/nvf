@@ -5,50 +5,20 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.lists) isList;
-  inherit (lib.strings) optionalString;
-  inherit (lib.options) mkEnableOption mkOption;
-  inherit (lib.types) bool enum package either listOf str nullOr;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
+  inherit (lib.types) bool enum package listOf;
+  inherit (lib) genAttrs;
+  inherit (lib.meta) getExe getExe';
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.nvim.lua) expToLua;
   inherit (lib.nvim.types) mkGrammarOption;
+  inherit (lib.generators) mkLuaInline;
   inherit (lib.nvim.dag) entryAfter;
-
-  packageToCmd = package: defaultCmd:
-    if isList cfg.lsp.package
-    then expToLua cfg.lsp.package
-    else ''{ "${cfg.lsp.package}/bin/${defaultCmd}" }'';
+  inherit (lib.nvim.attrsets) mapListToAttrs;
 
   cfg = config.vim.languages.clang;
 
-  defaultServer = "clangd";
-  servers = {
-    ccls = {
-      package = pkgs.ccls;
-      lspConfig = ''
-        lspconfig.ccls.setup{
-          capabilities = capabilities;
-          on_attach=default_on_attach;
-          cmd = ${packageToCmd cfg.lsp.package "ccls"};
-          ${optionalString (cfg.lsp.opts != null) "init_options = ${cfg.lsp.opts}"}
-        }
-      '';
-    };
-    clangd = {
-      package = pkgs.clang-tools;
-      lspConfig = ''
-        local clangd_cap = capabilities
-        -- use same offsetEncoding as null-ls
-        clangd_cap.offsetEncoding = {"utf-16"}
-        lspconfig.clangd.setup{
-          capabilities = clangd_cap;
-          on_attach=default_on_attach;
-          cmd = ${packageToCmd cfg.lsp.package "clangd"};
-          ${optionalString (cfg.lsp.opts != null) "init_options = ${cfg.lsp.opts}"}
-        }
-      '';
-    };
-  };
+  defaultServers = ["clangd"];
+  servers = ["ccls" "clangd"];
 
   defaultDebugger = "lldb-vscode";
   debuggers = {
@@ -78,6 +48,54 @@
       '';
     };
   };
+
+  defaultFormat = ["clang-format"];
+  formats = {
+    astyle = {
+      command = getExe pkgs.astyle;
+      stdin = false;
+      args = mkLuaInline ''
+        function(self, ctx)
+          local args = {
+            "$FILENAME",
+          }
+
+          if not vim.bo[ctx.buf].expandtab then
+            table.insert(args, "--indent=tab=" .. ctx.shiftwidth)
+          else
+            table.insert(args, "--indent=spaces=" .. ctx.shiftwidth)
+          end
+
+          return args
+        end
+      '';
+    };
+    indent = {
+      command = getExe pkgs.indent;
+      stdin = true;
+      args = mkLuaInline ''
+        function(self, ctx)
+          local args = {
+            "--indent-level", ctx.shiftwidth,
+            "--tab-size", ctx.shiftwidth,
+          }
+
+          if not vim.bo[ctx.buf].expandtab then
+            table.insert(args, "--use-tabs")
+          else
+            table.insert(args, "--no-tabs")
+          end
+
+          return args
+        end
+      '';
+      # Default is GNU style. Nobody likes that one.
+      # This is under `append_args`, to allow easy editing of this argument,
+      # without having to redefine everything as a user.
+      append_args = ["--linux-style"];
+    };
+    clang-format.command = getExe' pkgs.clang-tools "clang-format";
+  };
 in {
   options.vim.languages.clang = {
     enable = mkEnableOption "C/C++ language support";
@@ -92,31 +110,28 @@ in {
     };
 
     treesitter = {
-      enable = mkEnableOption "C/C++ treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "C/C++ treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       cPackage = mkGrammarOption pkgs "c";
       cppPackage = mkGrammarOption pkgs "cpp";
     };
 
     lsp = {
-      enable = mkEnableOption "clang LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "clang LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      server = mkOption {
+      servers = mkOption {
         description = "The clang LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "clang LSP server package, or the command to run as a list of strings";
-        example = ''[lib.getExe pkgs.jdt-language-server " - data " " ~/.cache/jdtls/workspace "]'';
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
-      };
-
-      opts = mkOption {
-        description = "Options to pass to clang LSP server";
-        type = nullOr str;
-        default = null;
+        type = listOf (enum servers);
+        default = defaultServers;
       };
     };
 
@@ -125,6 +140,7 @@ in {
         description = "Enable clang Debug Adapter";
         type = bool;
         default = config.vim.languages.enableDAP;
+        defaultText = literalExpression "config.vim.languages.enableDAP";
       };
       debugger = mkOption {
         description = "clang debugger to use";
@@ -135,6 +151,21 @@ in {
         description = "clang debugger package.";
         type = package;
         default = debuggers.${cfg.dap.debugger}.package;
+      };
+    };
+
+    format = {
+      enable =
+        mkEnableOption "C formatting"
+        // {
+          default = config.vim.languages.enableFormat;
+          defaultText = literalExpression "config.vim.languages.enableFormat";
+        };
+
+      type = mkOption {
+        type = listOf (enum (attrNames formats));
+        default = defaultFormat;
+        description = "C formatter to use";
       };
     };
   };
@@ -150,14 +181,35 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-
-      vim.lsp.lspconfig.sources.clang-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["c" "cpp" "objc" "objcpp" "cuda" "proto"];
+        });
+      };
     })
 
     (mkIf cfg.dap.enable {
       vim.debugger.nvim-dap.enable = true;
       vim.debugger.nvim-dap.sources.clang-debugger = debuggers.${cfg.dap.debugger}.dapConfig;
+    })
+
+    (mkIf cfg.format.enable {
+      vim.formatter.conform-nvim = {
+        enable = true;
+        setupOpts = {
+          formatters_by_ft = {
+            c = cfg.format.type;
+            cpp = cfg.format.type;
+          };
+          formatters =
+            mapListToAttrs (name: {
+              inherit name;
+              value = formats.${name};
+            })
+            cfg.format.type;
+        };
+      };
     })
   ]);
 }

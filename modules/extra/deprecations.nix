@@ -1,7 +1,9 @@
 {lib, ...}: let
-  inherit (lib.modules) mkRemovedOptionModule mkRenamedOptionModule;
+  inherit (builtins) head;
+  inherit (lib.modules) mkRemovedOptionModule mkRenamedOptionModule doRename;
   inherit (lib.lists) concatLists;
   inherit (lib.nvim.config) batchRenameOptions;
+  inherit (lib.trivial) warn;
 
   renamedVimOpts = batchRenameOptions ["vim"] ["vim" "options"] {
     # 2024-12-01
@@ -20,6 +22,31 @@
     # 2025-02-07
     scrollOffset = "scrolloff";
   };
+
+  mkRemovedLspOpt = lang: (mkRemovedOptionModule ["vim" "languages" lang "lsp" "opts"] ''
+    `vim.languages.${lang}.lsp.opts` is now moved to `vim.lsp.servers.<server_name>.init_options`
+  '');
+
+  mkRemovedLspPackage = lang: (mkRemovedOptionModule ["vim" "languages" lang "lsp" "package"] ''
+    `vim.languages.${lang}.lsp.package` is now moved to `vim.lsp.servers.<server_name>.cmd`
+  '');
+
+  mkRenamedLspServer = lang:
+    doRename
+    {
+      from = ["vim" "languages" lang "lsp" "server"];
+      to = ["vim" "languages" lang "lsp" "servers"];
+      visible = false;
+      warn = true;
+      use = x:
+        warn
+        "Obsolete option `vim.languages.${lang}.lsp.server` used, use `vim.languages.${lang}.lsp.servers` instead."
+        (head x);
+    };
+
+  mkRemovedFormatPackage = lang: (mkRemovedOptionModule ["vim" "languages" lang "format" "package"] ''
+    `vim.languages.${lang}.format.package` is removed, please use `vim.formatter.conform-nvim.formatters.<formatter_name>.command` instead.
+  '');
 in {
   imports = concatLists [
     [
@@ -120,9 +147,236 @@ in {
         in 'vim.clipboard.registers'. Please see the documentation for the new module for more
         details, or open an issue if you are confused.
       '')
+
+      # 2025-07-12
+      (mkRenamedLspServer "assembly")
+
+      (mkRenamedLspServer "astro")
+      (mkRemovedLspPackage "astro")
+
+      (mkRenamedLspServer "bash")
+      (mkRemovedLspPackage "bash")
+
+      (mkRemovedLspOpt "clang")
+      (mkRemovedLspPackage "clang")
+      (mkRenamedLspServer "clang")
+
+      (mkRemovedLspPackage "clojure")
+
+      (mkRenamedLspServer "csharp")
+      (mkRemovedLspPackage "csharp")
+
+      (mkRenamedLspServer "css")
+      (mkRemovedLspPackage "css")
+
+      (mkRemovedLspPackage "cue")
+
+      (mkRenamedLspServer "dart")
+      (mkRemovedLspPackage "dart")
+      (mkRemovedLspOpt "dart")
+
+      (mkRenamedLspServer "elixir")
+      (mkRemovedLspPackage "elixir")
+
+      (mkRenamedLspServer "fsharp")
+      (mkRemovedLspPackage "fsharp")
+
+      (mkRenamedLspServer "gleam")
+      (mkRemovedLspPackage "gleam")
+
+      (mkRenamedLspServer "go")
+      (mkRemovedLspPackage "go")
+
+      (mkRemovedLspPackage "haskell")
+
+      (mkRemovedLspPackage "hcl")
+
+      (mkRenamedLspServer "helm")
+      (mkRemovedLspPackage "helm")
+
+      (mkRemovedLspPackage "java")
+
+      (mkRenamedLspServer "julia")
+      (mkRemovedLspPackage "julia")
+
+      (mkRemovedLspPackage "kotlin")
+
+      (mkRemovedLspPackage "lua")
+
+      (mkRenamedLspServer "markdown")
+      (mkRemovedLspPackage "markdown")
+
+      (mkRenamedLspServer "nim")
+      (mkRemovedLspPackage "nim")
+
+      (mkRenamedLspServer "nix")
+      (mkRemovedLspPackage "nix")
+      (mkRemovedOptionModule ["vim" "languages" "nix" "lsp" "options"] ''
+        `vim.languages.nix.lsp.options` has been moved to `vim.lsp.servers.<server_name>.init_options`.
+      '')
+
+      (mkRenamedLspServer "nu")
+      (mkRemovedLspPackage "nu")
+
+      (mkRenamedLspServer "ocaml")
+      (mkRemovedLspPackage "ocaml")
+
+      (mkRenamedLspServer "odin")
+      (mkRemovedLspPackage "odin")
+
+      (mkRenamedLspServer "php")
+      (mkRemovedLspPackage "php")
+
+      (mkRenamedLspServer "python")
+      (mkRemovedLspPackage "python")
+
+      (mkRenamedLspServer "r")
+      (mkRemovedLspPackage "r")
+
+      (mkRenamedLspServer "ruby")
+      (mkRemovedLspPackage "ruby")
+
+      (mkRenamedLspServer "sql")
+      (mkRemovedLspPackage "sql")
+
+      (mkRenamedLspServer "svelte")
+      (mkRemovedLspPackage "svelte")
+
+      (mkRemovedLspPackage "terraform")
+
+      (mkRenamedLspServer "typescript")
+      (mkRemovedLspPackage "typescript")
+
+      (mkRenamedLspServer "typst")
+      (mkRemovedLspPackage "typst")
+
+      (mkRenamedLspServer "vala")
+      (mkRemovedLspPackage "vala")
+
+      (mkRenamedLspServer "wgsl")
+      (mkRemovedLspPackage "wgsl")
+
+      (mkRenamedLspServer "yaml")
+      (mkRemovedLspPackage "yaml")
+
+      (mkRenamedLspServer "zig")
+      (mkRemovedLspPackage "zig")
+
+      # 2025-10-22
+      (mkRenamedOptionModule ["vim" "languages" "rust" "crates" "enable"] ["vim" "languages" "rust" "extensions" "crates-nvim" "enable"])
+      (mkRemovedOptionModule ["vim" "languages" "rust" "crates" "codeActions"] ''
+        'vim.languages.rust.crates' option has been moved to 'vim.languages.rust.extensions.crates-nvim' in full and the
+        codeActions option has been removed. To set up code actions again, you may use the the new 'setupOpts' option
+        located under 'vim.languages.rust.extensions.crates-nvim'. Refer to crates.nvim documentation for setup steps:
+
+        <https://github.com/Saecki/crates.nvim/wiki/Documentation-v0.7.1#in-process-language-server>
+      '')
+
+      (mkRemovedOptionModule ["vim" "language" "astro" "format"] ''
+        This option has been removed due to being broken for a long time.
+      '')
+      (mkRemovedOptionModule ["vim" "language" "svelte" "format"] ''
+        This option has been removed due to being broken for a long time.
+      '')
     ]
 
+    (map mkRemovedFormatPackage [
+      "bash"
+      "css"
+      "elixir"
+      "fsharp"
+      "go"
+      "hcl"
+      "html"
+      "json"
+      "lua"
+      "markdown"
+      "nim"
+      "nix"
+      "ocaml"
+      "python"
+      "qml"
+      "r"
+      "ruby"
+      "rust"
+      "sql"
+      "typescript"
+      "typst"
+    ])
     # Migrated via batchRenameOptions. Further batch renames must be below this line.
     renamedVimOpts
+
+    # 2026-01-06
+    [
+      (mkRemovedOptionModule ["vim" "treesitter" "highlight" "disable"] ''
+        Treesitter highlighting is now handled by Neovim natively, and it does not have a disable option.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "highlight" "additionalVimRegexHighlighting"] ''
+        Treesitter highlighting is now handled by Neovim natively, and it does not have a additionalVimRegexHighlighting option.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "indent" "disable"] ''
+        Treesitter indentation is now handled differently, and it does not have a disable option.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "incrementalSelection" "enable"] ''
+        Incremental selection configuration has been removed from nvim-treesitter.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "incrementalSelection" "disable"] ''
+        Incremental selection configuration has been removed from nvim-treesitter.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "mappings" "incrementalSelection" "init"] ''
+        Incremental selection configuration has been removed from nvim-treesitter.
+      '')
+      (mkRemovedOptionModule ["vim" "treesitter" "mappings" "incrementalSelection" "incrementByNode"] ''
+        Incremental selection configuration has been removed from nvim-treesitter.
+      '')
+      (
+        mkRemovedOptionModule ["vim" "treesitter" "mappings" "incrementalSelection" "incrementByScope"]
+        ''
+          Incremental selection configuration has been removed from nvim-treesitter.
+        ''
+      )
+      (mkRemovedOptionModule ["vim" "treesitter" "mappings" "incrementalSelection" "decrementByNode"] ''
+        Incremental selection configuration has been removed from nvim-treesitter.
+      '')
+    ]
+
+    # 2026-03-19
+    [
+      (mkRenamedOptionModule ["vim" "treesitter" "foldByDefault"] ["vim" "options" "foldenable"])
+    ]
+
+    # 2026-04-13
+    [
+      (mkRenamedOptionModule ["vim" "lsp" "harper-ls" "enable"] ["vim" "lsp" "presets" "harper" "enable"])
+      (mkRenamedOptionModule ["vim" "lsp" "harper-ls" "settings"] ["vim" "lsp" "servers" "harper" "settings"])
+      (mkRenamedOptionModule ["vim" "languages" "tailwind" "enable"] ["vim" "lsp" "presets" "tailwindcss-language-server" "enable"])
+      (mkRenamedOptionModule ["vim" "languages" "tailwind" "lsp" "enable"] ["vim" "lsp" "presets" "tailwindcss-language-server" "enable"])
+      (mkRenamedOptionModule ["vim" "languages" "tailwind" "lsp" "servers"] ["vim" "lsp" "presets" "tailwindcss-language-server" "enable"])
+    ]
+
+    # 2026-04-16
+    [
+      (mkRenamedOptionModule ["vim" "languages" "ts"] ["vim" "languages" "typescript"])
+    ]
+
+    # 2026-04-19
+    [
+      (mkRenamedOptionModule ["vim" "utility" "vim-wakatime" "cli-path"] ["vim" "utility" "vim-wakatime" "setupOpts" "cli_path"])
+      (mkRenamedOptionModule ["vim" "languages" "go" "treesitter" "gotmplPackage"] ["vim" "languages" "go" "treesitter" "gotmpl" "package"])
+    ]
+
+    # 2026-05-09
+    [
+      (mkRemovedOptionModule ["vim" "notes" "mind-nvim" "enable"] ''
+        mind.nvim was deprecated 3 years ago, and the repository was recrently deleted by the author, in his move to sourcehut.
+        they migrated some repositories, but mind.nvim wasn't one of them. More information can be found here:
+        <https://strongly-typed-thoughts.net/blog/final-bye-github>
+      '')
+    ]
+
+    # 2026-05-16
+    [
+      (mkRenamedOptionModule ["vim" "languages" "typescript" "treesitter" "tsxPackage"] ["vim" "languages" "tsx" "treesitter" "package"])
+    ]
   ];
 }

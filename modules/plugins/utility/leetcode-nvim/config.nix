@@ -10,9 +10,7 @@ in {
   config = mkIf cfg.enable {
     vim = {
       startPlugins = [
-        "leetcode-nvim"
         "plenary-nvim"
-        "fzf-lua"
         "nui-nvim"
       ];
 
@@ -21,6 +19,8 @@ in {
         setupModule = "leetcode";
         inherit (cfg) setupOpts;
       };
+
+      telescope.enable = true;
     };
   };
 }

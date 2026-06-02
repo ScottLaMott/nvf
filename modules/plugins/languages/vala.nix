@@ -4,63 +4,46 @@
   lib,
   ...
 }: let
-  inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) enum either listOf package str;
-  inherit (lib.nvim.types) mkGrammarOption;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib) genAttrs;
+  inherit (lib.types) listOf;
+  inherit (lib.nvim.types) mkGrammarOption enumWithRename;
 
   cfg = config.vim.languages.vala;
 
-  defaultServer = "vala_ls";
-  servers = {
-    vala_ls = {
-      package = pkgs.symlinkJoin {
-        name = "vala-language-server-wrapper";
-        paths = [pkgs.vala-language-server];
-        buildInputs = [pkgs.makeBinaryWrapper];
-        postBuild = ''
-          wrapProgram $out/bin/vala-language-server \
-            --prefix PATH : ${pkgs.uncrustify}/bin
-        '';
-      };
-      internalFormatter = true;
-      lspConfig = ''
-        lspconfig.vala_ls.setup {
-          capabilities = capabilities;
-          on_attach = default_on_attach;
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else ''{"${cfg.lsp.package}/bin/vala-language-server"}''
-        },
-        }
-      '';
-    };
-  };
+  defaultServers = ["vala-language-server"];
+  servers = ["vala-language-server"];
 in {
   options.vim.languages.vala = {
     enable = mkEnableOption "Vala language support";
 
     treesitter = {
-      enable = mkEnableOption "Vala treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Vala treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "vala";
     };
 
     lsp = {
-      enable = mkEnableOption "Vala LSP support" // {default = config.vim.lsp.enable;};
-      server = mkOption {
+      enable =
+        mkEnableOption "Vala LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
+      servers = mkOption {
+        type = listOf (enumWithRename
+          "vim.languages.vala.lsp.servers"
+          servers
+          {
+            vala_ls = "vala-language-server";
+          });
+        default = defaultServers;
         description = "Vala LSP server to use";
-        type = enum (attrNames servers);
-        default = defaultServer;
-      };
-
-      package = mkOption {
-        description = "Vala LSP server package, or the command to run as a list of strings";
-        type = either package (listOf str);
-        default = servers.${cfg.lsp.server}.package;
       };
     };
   };
@@ -72,8 +55,12 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.vala_ls = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["vala"];
+        });
+      };
     })
   ]);
 }

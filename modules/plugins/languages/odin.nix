@@ -5,54 +5,77 @@
   ...
 }: let
   inherit (builtins) attrNames;
-  inherit (lib.options) mkEnableOption mkOption;
+  inherit (lib.options) mkEnableOption mkOption literalExpression;
   inherit (lib.modules) mkIf mkMerge;
-  inherit (lib.lists) isList;
-  inherit (lib.types) either listOf package str enum;
-  inherit (lib.nvim.lua) expToLua;
+  inherit (lib.types) enum package listOf;
+  inherit (lib.nvim.dag) entryAfter;
+  inherit (lib) genAttrs;
   inherit (lib.nvim.types) mkGrammarOption;
 
-  defaultServer = "ols";
-  servers = {
-    ols = {
-      package = pkgs.ols;
-      lspConfig = ''
-        lspconfig.ols.setup {
-          capabilities = capabilities,
-          on_attach = default_on_attach,
-          cmd = ${
-          if isList cfg.lsp.package
-          then expToLua cfg.lsp.package
-          else "{'${cfg.lsp.package}/bin/ols'}"
-        }
+  cfg = config.vim.languages.odin;
+
+  defaultServers = ["ols"];
+  servers = ["ols"];
+  defaultDebugger = "codelldb";
+  debuggers = {
+    codelldb = {
+      package = pkgs.lldb;
+      dapConfig = ''
+        dap.adapters.codelldb = {
+          type = 'executable',
+          command = '${cfg.dap.package}/bin/lldb-dap',
+          name = 'codelldb'
         }
       '';
     };
   };
-
-  cfg = config.vim.languages.odin;
 in {
   options.vim.languages.odin = {
     enable = mkEnableOption "Odin language support";
 
     treesitter = {
-      enable = mkEnableOption "Odin treesitter" // {default = config.vim.languages.enableTreesitter;};
+      enable =
+        mkEnableOption "Odin treesitter"
+        // {
+          default = config.vim.languages.enableTreesitter;
+          defaultText = literalExpression "config.vim.languages.enableTreesitter";
+        };
       package = mkGrammarOption pkgs "odin";
     };
 
     lsp = {
-      enable = mkEnableOption "Odin LSP support" // {default = config.vim.lsp.enable;};
+      enable =
+        mkEnableOption "Odin LSP support"
+        // {
+          default = config.vim.lsp.enable;
+          defaultText = literalExpression "config.vim.lsp.enable";
+        };
 
-      server = mkOption {
-        type = enum (attrNames servers);
-        default = defaultServer;
+      servers = mkOption {
+        type = listOf (enum servers);
+        default = defaultServers;
         description = "Odin LSP server to use";
+      };
+    };
+
+    dap = {
+      enable =
+        mkEnableOption "Enable Odin Debug Adapter"
+        // {
+          default = config.vim.languages.enableDAP;
+          defaultText = literalExpression "config.vim.languages.enableDAP";
+        };
+
+      debugger = mkOption {
+        description = "Odin debugger to use";
+        type = enum (attrNames debuggers);
+        default = defaultDebugger;
       };
 
       package = mkOption {
-        description = "Ols package, or the command to run as a list of strings";
-        type = either package (listOf str);
-        default = pkgs.ols;
+        description = "Odin debugger package.";
+        type = package;
+        default = debuggers.${cfg.dap.debugger}.package;
       };
     };
   };
@@ -64,8 +87,25 @@ in {
     })
 
     (mkIf cfg.lsp.enable {
-      vim.lsp.lspconfig.enable = true;
-      vim.lsp.lspconfig.sources.odin-lsp = servers.${cfg.lsp.server}.lspConfig;
+      vim.lsp = {
+        presets = genAttrs cfg.lsp.servers (_: {enable = true;});
+        servers = genAttrs cfg.lsp.servers (_: {
+          filetypes = ["odin"];
+        });
+      };
+    })
+
+    (mkIf cfg.dap.enable {
+      vim = {
+        startPlugins = ["nvim-dap-odin"];
+        debugger.nvim-dap.sources.odin-debugger = debuggers.${cfg.dap.debugger}.dapConfig;
+        pluginRC.nvim-dap-odin = entryAfter ["nvim-dap"] ''
+          require('nvim-dap-odin').setup({
+            notifications = false -- contains no useful information
+          })
+        '';
+        debugger.nvim-dap.enable = true;
+      };
     })
   ]);
 }
