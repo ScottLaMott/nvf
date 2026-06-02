@@ -162,26 +162,24 @@ isMaximal: {
       # name = "github"; style = "light_tritanopia";
       # name = "nord";
 
-      #--- base16 colorschemes
-      # name = "base16";
-      name = "base16"; style = "ashes";
+      name = "base16";
 
-      base16-colors.base00 = "#161616";
-      base16-colors.base01 = "#262626";
-      base16-colors.base02 = "#393939";
-      base16-colors.base03 = "#525252";
-      base16-colors.base04 = "#dde1e6";
-      base16-colors.base05 = "#f2f4f8";
-      base16-colors.base06 = "#ffffff";
-      base16-colors.base07 = "#08bdba";
-      base16-colors.base08 = "#3ddbd9";
-      base16-colors.base09 = "#78a9ff";
-      base16-colors.base0A = "#ee5396";
-      base16-colors.base0B = "#33b1ff";
-      base16-colors.base0C = "#ff7eb6";
-      base16-colors.base0D = "#42be65";
-      base16-colors.base0E = "#be95ff";
-      base16-colors.base0F = "#82cfff";
+      base16-colors.base00 = "#1C2023";
+      base16-colors.base01 = "#393F45";
+      base16-colors.base02 = "#565E65";
+      base16-colors.base03 = "#747C84";
+      base16-colors.base04 = "#ADB3BA";
+      base16-colors.base05 = "#C7CCD1";
+      base16-colors.base06 = "#DFE2E5";
+      base16-colors.base07 = "#F3F4F5";
+      base16-colors.base08 = "#C7AE95";
+      base16-colors.base09 = "#C7C795";
+      base16-colors.base0A = "#AEC795";
+      base16-colors.base0B = "#95C7AE";
+      base16-colors.base0C = "#95AEC7";
+      base16-colors.base0D = "#AE95C7";
+      base16-colors.base0E = "#C795AE";
+      base16-colors.base0F = "#C79595";
     };
 
     autopairs.nvim-autopairs.enable = true;
@@ -337,6 +335,8 @@ isMaximal: {
     };
 
     keymaps = [
+      #-- oil
+      { key = "-";               mode = ["n"]; action = "<cmd>Oil<cr>";                       silent = true;  desc = "Open parent directory (oil)"; }
       #-- save, quit + delete
       { key = "<leader>bd";      mode = ["n"]; action = "<cmd>bdelete<cr>";                   silent = false; desc = "bdelete"; }
       { key = "<leader>q";       mode = ["n"]; action = "<cmd>quit<cr>";                      silent = false; desc = "quit"; }
