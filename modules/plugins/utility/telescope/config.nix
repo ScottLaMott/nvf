@@ -69,6 +69,9 @@ in {
           ++ optionals config.vim.treesitter.enable [
             (mkKeymap "n" keys.treesitter "<cmd>Telescope treesitter<CR>" {desc = mappings.treesitter.description;})
           ]
+          ++ [
+            (mkKeymap "n" keys.colorscheme "<cmd>Telescope colorscheme<CR>" {desc = mappings.colorscheme.description;})
+          ]
           ++ optionals config.vim.projects.project-nvim.enable [
             (mkKeymap "n" keys.findProjects "<cmd>Telescope projects<CR>" {desc = mappings.findProjects.description;})
           ];

@@ -224,6 +224,7 @@ in {
       diagnostics = mkMappingOption "Diagnostics [Telescope]" "<leader>fld";
 
       treesitter = mkMappingOption "Treesitter [Telescope]" "<leader>fs";
+      colorscheme = mkMappingOption "Colorscheme [Telescope]" "<leader>fc";
     };
 
     enable = mkEnableOption "telescope.nvim: multi-purpose search and picker utility";
